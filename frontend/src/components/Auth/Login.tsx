@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 
@@ -7,12 +8,14 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const login = useAuthStore((state) => state.login);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await authService.login({ username, password });
       login(response);
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     }

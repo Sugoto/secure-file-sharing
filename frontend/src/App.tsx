@@ -1,32 +1,53 @@
-import { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { Login } from "./components/Auth/Login";
 import { Register } from "./components/Auth/Register";
+import { Dashboard } from "./components/Dashboard/Dashboard";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useAuthStore } from "./store/authStore";
 
 function App() {
-  const [isLogin, setIsLogin] = useState(true);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="p-4 flex justify-center space-x-4">
-        <button
-          className={`px-4 py-2 rounded ${
-            isLogin ? "bg-indigo-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setIsLogin(true)}
-        >
-          Login
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            !isLogin ? "bg-indigo-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setIsLogin(false)}
-        >
-          Register
-        </button>
-      </nav>
-      {isLogin ? <Login /> : <Register />}
-    </div>
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <div className="min-h-screen bg-gray-50">
+                <Login />
+              </div>
+            )
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Register />
+            )
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
