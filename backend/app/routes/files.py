@@ -18,9 +18,9 @@ os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
 class FileShare(BaseModel):
     file_id: int
-    shared_with_username: str
+    shared_with_username: Optional[str] = None
     permissions: str = "view"
-    expires_at: Optional[datetime] = None
+    expires_in_hours: Optional[int] = 24
 
 
 class FileMetadata(BaseModel):
@@ -28,6 +28,11 @@ class FileMetadata(BaseModel):
     file_path: str
     user_id: int
     encrypted_key: str
+
+
+class ShareLinkCreate(BaseModel):
+    file_id: int
+    expires_in_hours: Optional[int] = 24
 
 
 @router.post("/upload")
@@ -86,27 +91,42 @@ def share_file(
     sharer = fetch_one(
         "SELECT id FROM users WHERE username = ?", (current_user["sub"],)
     )
-    shared_with = fetch_one(
-        "SELECT id FROM users WHERE username = ?", (share_details.shared_with_username,)
-    )
 
-    if not sharer or not shared_with:
+    if not sharer:
         raise HTTPException(status_code=404, detail="User not found")
 
-    expires_at = share_details.expires_at or datetime.utcnow() + timedelta(days=7)
+    expires_at = datetime.utcnow() + timedelta(hours=share_details.expires_in_hours)
+    token = (
+        None
+        if share_details.shared_with_username
+        else SecurityService.generate_share_token()
+    )
+
+    shared_with_id = None
+    if share_details.shared_with_username:
+        shared_with = fetch_one(
+            "SELECT id FROM users WHERE username = ?",
+            (share_details.shared_with_username,),
+        )
+        if not shared_with:
+            raise HTTPException(status_code=404, detail="Shared user not found")
+        shared_with_id = shared_with[0]
 
     execute_query(
-        "INSERT INTO file_shares (file_id, shared_by, shared_with, permissions, expires_at) VALUES (?, ?, ?, ?, ?)",
+        """INSERT INTO file_shares 
+           (file_id, shared_by, shared_with, permissions, token, expires_at) 
+           VALUES (?, ?, ?, ?, ?, ?)""",
         (
             share_details.file_id,
             sharer[0],
-            shared_with[0],
+            shared_with_id,
             share_details.permissions,
+            token,
             expires_at,
         ),
     )
 
-    return {"message": "File shared successfully"}
+    return {"message": "File shared successfully", "share_token": token}
 
 
 @router.get("/list")
@@ -195,3 +215,57 @@ def delete_file(
     execute_query("DELETE FROM files WHERE id = ?", (file_id,))
 
     return {"message": "File deleted successfully"}
+
+
+@router.get("/shared/{token}")
+def access_shared_file(token: str, password: str):
+    file_data = fetch_one(
+        """
+        SELECT f.* FROM files f
+        JOIN file_shares fs ON f.id = fs.file_id
+        WHERE fs.token = ? AND fs.expires_at > CURRENT_TIMESTAMP
+        """,
+        (token,),
+    )
+
+    if not file_data:
+        raise HTTPException(status_code=404, detail="Invalid or expired share link")
+
+    try:
+        stored_key = base64.urlsafe_b64decode(file_data[4])
+        salt = base64.urlsafe_b64decode(file_data[5])
+
+        derived_key, _ = FileEncryptor.generate_key(password, salt)
+        decrypted_path = FileEncryptor.decrypt_file(file_data[3], derived_key)
+
+        return {"filename": file_data[1], "file_path": decrypted_path}
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail="Decryption failed. Check your password."
+        )
+
+
+@router.delete("/revoke-share/{share_id}")
+def revoke_share(
+    share_id: int, current_user: dict = Depends(SecurityService.get_current_user)
+):
+    user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    share = fetch_one(
+        """
+        SELECT fs.* FROM file_shares fs
+        JOIN files f ON fs.file_id = f.id
+        WHERE fs.id = ? AND f.user_id = ?
+        """,
+        (share_id, user[0]),
+    )
+
+    if not share:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to revoke this share"
+        )
+
+    execute_query("DELETE FROM file_shares WHERE id = ?", (share_id,))
+    return {"message": "Share access revoked successfully"}

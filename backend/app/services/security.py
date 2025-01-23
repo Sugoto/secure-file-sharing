@@ -1,10 +1,14 @@
 import os
+import uuid
+import base64
 from datetime import datetime, timedelta
-
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_very_secret_key")
 ALGORITHM = "HS256"
@@ -44,12 +48,10 @@ class SecurityService:
         token = credentials.credentials
         return cls.decode_token(token)
 
-
-import uuid
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
+    @staticmethod
+    def generate_share_token() -> str:
+        """Generate a secure random token for file sharing"""
+        return str(uuid.uuid4())
 
 
 class FileEncryptor:

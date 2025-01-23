@@ -10,7 +10,6 @@ def init_db():
     with sqlite3.connect(DATABASE_PATH) as conn:
         cursor = conn.cursor()
 
-        # Users table
         cursor.execute(
             """
         CREATE TABLE IF NOT EXISTS users (
@@ -24,7 +23,6 @@ def init_db():
         """
         )
 
-        # Files table
         cursor.execute(
             """
         CREATE TABLE IF NOT EXISTS files (
@@ -40,15 +38,15 @@ def init_db():
         """
         )
 
-        # File sharing table
         cursor.execute(
             """
         CREATE TABLE IF NOT EXISTS file_shares (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             file_id INTEGER NOT NULL,
             shared_by INTEGER NOT NULL,
-            shared_with INTEGER NOT NULL,
+            shared_with INTEGER,
             permissions TEXT NOT NULL,
+            token TEXT UNIQUE,
             expires_at DATETIME,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (file_id) REFERENCES files (id),
