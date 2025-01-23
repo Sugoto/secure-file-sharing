@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Form
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.services.database import execute_query, fetch_one, fetch_all
@@ -179,10 +180,20 @@ def download_file(
         salt = base64.urlsafe_b64decode(file[5])
 
         derived_key, _ = FileEncryptor.generate_key(password, salt)
-
         decrypted_path = FileEncryptor.decrypt_file(file[3], derived_key)
 
-        return {"filename": file[1], "file_path": decrypted_path}
+        def cleanup(decrypted_path=decrypted_path):
+            try:
+                os.remove(decrypted_path)
+            except:
+                pass
+
+        return FileResponse(
+            decrypted_path,
+            filename=file[1],
+            background=cleanup,
+            media_type="application/octet-stream"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=400, detail="Decryption failed. Check your password."
@@ -238,7 +249,18 @@ def access_shared_file(token: str, password: str):
         derived_key, _ = FileEncryptor.generate_key(password, salt)
         decrypted_path = FileEncryptor.decrypt_file(file_data[3], derived_key)
 
-        return {"filename": file_data[1], "file_path": decrypted_path}
+        def cleanup(decrypted_path=decrypted_path):
+            try:
+                os.remove(decrypted_path)
+            except:
+                pass
+
+        return FileResponse(
+            decrypted_path,
+            filename=file_data[1],
+            background=cleanup,
+            media_type="application/octet-stream"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=400, detail="Decryption failed. Check your password."
