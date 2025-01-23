@@ -136,3 +136,31 @@ def download_file(
         raise HTTPException(status_code=403, detail="Access denied")
 
     return {"filename": file[1], "file_path": file[3], "encrypted_key": file[4]}
+
+
+@router.delete("/delete/{file_id}")
+def delete_file(
+    file_id: int, current_user: dict = Depends(SecurityService.get_current_user)
+):
+    user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_id = user[0]
+
+    file = fetch_one(
+        "SELECT * FROM files WHERE id = ? AND user_id = ?", (file_id, user_id)
+    )
+    if not file:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this file"
+        )
+
+    try:
+        os.remove(file[3])
+    except FileNotFoundError:
+        pass
+
+    execute_query("DELETE FROM file_shares WHERE file_id = ?", (file_id,))
+    execute_query("DELETE FROM files WHERE id = ?", (file_id,))
+
+    return {"message": "File deleted successfully"}

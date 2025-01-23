@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from app.services.database import execute_query, fetch_one
+from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService
+import os
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -62,6 +63,32 @@ def login_user(user: UserLogin):
         "token_type": "bearer",
         "user": {"username": db_user[1], "email": db_user[2], "role": db_user[4]},
     }
+
+
+@router.delete("/account")
+def delete_user_account(current_user: dict = Depends(SecurityService.get_current_user)):
+    user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_id = user[0]
+
+    user_files = fetch_all(
+        "SELECT id, file_path FROM files WHERE user_id = ?", (user_id,)
+    )
+    for file in user_files:
+        try:
+            os.remove(file[1])
+        except FileNotFoundError:
+            pass
+
+    execute_query(
+        "DELETE FROM file_shares WHERE shared_by = ? OR shared_with = ?",
+        (user_id, user_id),
+    )
+    execute_query("DELETE FROM files WHERE user_id = ?", (user_id,))
+    execute_query("DELETE FROM users WHERE id = ?", (user_id,))
+
+    return {"message": "Account deleted successfully"}
 
 
 @router.get("/validate-token")
