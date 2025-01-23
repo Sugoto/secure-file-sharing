@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.services.database import execute_query, fetch_one, fetch_all
-from app.services.security import SecurityService, FileEncryptor
+from app.services.security import SecurityService, FileEncryptor, check_roles
 import base64
 
 router = APIRouter(prefix="/files", tags=["File Management"])
@@ -37,6 +37,7 @@ class ShareLinkCreate(BaseModel):
 
 
 @router.post("/upload")
+@check_roles(["user", "admin"])
 async def upload_file(
     file: UploadFile = File(...),
     password: str = Form(...),
@@ -81,6 +82,7 @@ async def upload_file(
 
 
 @router.post("/share")
+@check_roles(["user", "admin"])
 def share_file(
     share_details: FileShare,
     current_user: dict = Depends(SecurityService.get_current_user),
@@ -131,22 +133,28 @@ def share_file(
 
 
 @router.get("/list")
+@check_roles(["guest", "user", "admin"])
 def list_user_files(current_user: dict = Depends(SecurityService.get_current_user)):
-    user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
+    user = fetch_one(
+        "SELECT id, role FROM users WHERE username = ?", (current_user["sub"],)
+    )
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user_id = user[0]
+    user_id, user_role = user[0], user[1]
 
-    owned_files = fetch_all("SELECT * FROM files WHERE user_id = ?", (user_id,))
-
-    shared_files = fetch_all(
-        """
-        SELECT f.* FROM files f
-        JOIN file_shares fs ON f.id = fs.file_id
-        WHERE fs.shared_with = ? AND fs.expires_at > CURRENT_TIMESTAMP
-        """,
-        (user_id,),
-    )
+    if user_role == "admin":
+        owned_files = fetch_all("SELECT * FROM files")
+        shared_files = []
+    else:
+        owned_files = fetch_all("SELECT * FROM files WHERE user_id = ?", (user_id,))
+        shared_files = fetch_all(
+            """
+            SELECT f.* FROM files f
+            JOIN file_shares fs ON f.id = fs.file_id
+            WHERE fs.shared_with = ? AND fs.expires_at > CURRENT_TIMESTAMP
+            """,
+            (user_id,),
+        )
 
     return {"owned_files": owned_files, "shared_files": shared_files}
 
@@ -192,7 +200,7 @@ def download_file(
             decrypted_path,
             filename=file[1],
             background=cleanup,
-            media_type="application/octet-stream"
+            media_type="application/octet-stream",
         )
     except Exception as e:
         raise HTTPException(
@@ -201,17 +209,24 @@ def download_file(
 
 
 @router.delete("/delete/{file_id}")
-def delete_file(
+@check_roles(["user", "admin"])
+async def delete_file(
     file_id: int, current_user: dict = Depends(SecurityService.get_current_user)
 ):
-    user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
+    user = fetch_one(
+        "SELECT id, role FROM users WHERE username = ?", (current_user["sub"],)
+    )
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user_id = user[0]
+    user_id, user_role = user[0], user[1]
 
-    file = fetch_one(
-        "SELECT * FROM files WHERE id = ? AND user_id = ?", (file_id, user_id)
-    )
+    if user_role == "admin":
+        file = fetch_one("SELECT * FROM files WHERE id = ?", (file_id,))
+    else:
+        file = fetch_one(
+            "SELECT * FROM files WHERE id = ? AND user_id = ?", (file_id, user_id)
+        )
+
     if not file:
         raise HTTPException(
             status_code=403, detail="Not authorized to delete this file"
@@ -259,7 +274,7 @@ def access_shared_file(token: str, password: str):
             decrypted_path,
             filename=file_data[1],
             background=cleanup,
-            media_type="application/octet-stream"
+            media_type="application/octet-stream",
         )
     except Exception as e:
         raise HTTPException(

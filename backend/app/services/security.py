@@ -9,10 +9,41 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from functools import wraps
+from typing import List
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_very_secret_key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+ROLES = {
+    "admin": ["admin"],
+    "user": ["user", "admin"],
+    "guest": ["guest", "user", "admin"],
+}
+
+
+def check_roles(required_roles: List[str]):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            current_user = kwargs.get("current_user")
+            if not current_user or "role" not in current_user:
+                raise HTTPException(status_code=403, detail="Not authorized")
+
+            user_role = current_user["role"]
+            if user_role not in ROLES or not any(
+                role in required_roles for role in ROLES[user_role]
+            ):
+                raise HTTPException(
+                    status_code=403, detail="Not authorized for this action"
+                )
+
+            return await func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class SecurityService:

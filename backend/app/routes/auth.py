@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.services.database import execute_query, fetch_one, fetch_all
-from app.services.security import SecurityService
+from app.services.security import SecurityService, check_roles
 import os
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -94,3 +94,24 @@ def delete_user_account(current_user: dict = Depends(SecurityService.get_current
 @router.get("/validate-token")
 def validate_token(token_data: dict = Depends(SecurityService.get_current_user)):
     return {"valid": True, "user": token_data}
+
+
+@router.get("/users")
+@check_roles(["admin"])
+async def list_users(current_user: dict = Depends(SecurityService.get_current_user)):
+    users = fetch_all("SELECT id, username, email, role, created_at FROM users")
+    return {"users": users}
+
+
+@router.put("/users/{user_id}/role")
+@check_roles(["admin"])
+async def update_user_role(
+    user_id: int,
+    new_role: str,
+    current_user: dict = Depends(SecurityService.get_current_user),
+):
+    if new_role not in ["admin", "user", "guest"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    execute_query("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
+    return {"message": "User role updated successfully"}
