@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { authService } from "../../services/authService";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../store/authStore";
 
 export const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
+  const login = useAuthStore((state) => state.login);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
