@@ -13,6 +13,7 @@ def init_db():
     - users: Stores user account information
     - files: Stores uploaded file metadata
     - file_shares: Stores file sharing information
+    - mfa_codes: Stores MFA codes for users
     """
     with sqlite3.connect(DATABASE_PATH) as conn:
         cursor = conn.cursor()
@@ -25,7 +26,8 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'user',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            mfa_enabled BOOLEAN DEFAULT 0
         )
         """
         )
@@ -59,6 +61,19 @@ def init_db():
             FOREIGN KEY (file_id) REFERENCES files (id),
             FOREIGN KEY (shared_by) REFERENCES users (id),
             FOREIGN KEY (shared_with) REFERENCES users (id)
+        )
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE TABLE IF NOT EXISTS mfa_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            code TEXT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )
         """
         )

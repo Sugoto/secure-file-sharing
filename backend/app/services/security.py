@@ -11,6 +11,10 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from functools import wraps
 from typing import List
+import random
+import string
+from email.message import EmailMessage
+import smtplib
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_very_secret_key")
 ALGORITHM = "HS256"
@@ -152,6 +156,44 @@ class SecurityService:
             str: UUID-based share token
         """
         return str(uuid.uuid4())
+
+    @staticmethod
+    def generate_mfa_code() -> str:
+        """
+        Generate a 6-digit MFA code.
+
+        Returns:
+            str: 6-digit MFA code
+        """
+        return "".join(random.choices(string.digits, k=6))
+
+    @staticmethod
+    def send_mfa_code(email: str, code: str):
+        """
+        Send MFA code via email.
+
+        Args:
+            email (str): Email address to send the code to
+            code (str): 6-digit MFA code
+
+        Note:
+            Uses SMTP settings from environment variables
+        """
+        smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        smtp_user = os.environ.get("SMTP_USER")
+        smtp_password = os.environ.get("SMTP_PASSWORD")
+
+        msg = EmailMessage()
+        msg.set_content(f"Your MFA code is: {code}")
+        msg["Subject"] = "Your MFA Code"
+        msg["From"] = smtp_user
+        msg["To"] = email
+
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.send_message(msg)
 
 
 class FileEncryptor:
