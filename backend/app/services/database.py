@@ -33,6 +33,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             file_path TEXT NOT NULL,
             encrypted_key TEXT NOT NULL,
+            encryption_salt TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
