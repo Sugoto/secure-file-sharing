@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useFileStore } from "../../store/fileStore";
-import { fileService } from "../../services/fileService";
-import { ShareModal } from "../ShareModal/ShareModal";
+import { useFileStore } from "../store/fileStore";
+import { fileService } from "../services/fileService";
+import { ShareModal } from "./ShareModal";
 
 export const FileList = () => {
   const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =

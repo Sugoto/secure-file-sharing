@@ -1,6 +1,6 @@
-import { useAuthStore } from "../../store/authStore";
-import { FileUpload } from "../FileUpload/FileUpload";
-import { FileList } from "../FileList/FileList";
+import { useAuthStore } from "../store/authStore";
+import { FileUpload } from "./FileUpload";
+import { FileList } from "./FileList";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);

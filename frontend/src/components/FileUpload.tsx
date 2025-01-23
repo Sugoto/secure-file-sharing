@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useFileStore } from '../../store/fileStore';
+import { useFileStore } from '../store/fileStore';
 
 export const FileUpload = () => {
   const [file, setFile] = useState<File | null>(null);

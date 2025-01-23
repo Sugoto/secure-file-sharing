@@ -4,9 +4,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Login } from "./components/Auth/Login";
-import { Register } from "./components/Auth/Register";
-import { Dashboard } from "./components/Dashboard/Dashboard";
+import { Login } from "./components/Login";
+import { Register } from "./components/Register";
+import { Dashboard } from "./components/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuthStore } from "./store/authStore";
 

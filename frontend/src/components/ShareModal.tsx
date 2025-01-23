@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useFileStore } from "../../store/fileStore";
+import { useFileStore } from "../store/fileStore";
 
 interface ShareModalProps {
   fileId: number;
