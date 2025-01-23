@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { authService } from "../services/authService";
+import { Link } from "react-router-dom";
 
 export const Register = () => {
   const [formData, setFormData] = useState({
@@ -76,6 +77,17 @@ export const Register = () => {
             </button>
           </div>
         </form>
+        <div className="text-center">
+          <p className="mt-2 text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link
+              to="/"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Sign in here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
