@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useFileStore } from "../../store/fileStore";
 import { fileService } from "../../services/fileService";
+import { ShareModal } from "../ShareModal/ShareModal";
 
 export const FileList = () => {
   const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =
     useFileStore();
   const [downloadPassword, setDownloadPassword] = useState("");
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
+  const [shareFileId, setShareFileId] = useState<number | null>(null);
+  const [shareFileName, setShareFileName] = useState("");
 
   useEffect(() => {
     fetchFiles();
@@ -65,6 +68,15 @@ export const FileList = () => {
               Download
             </button>
             <button
+              onClick={() => {
+                setShareFileId(file.id);
+                setShareFileName(file.filename);
+              }}
+              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Share
+            </button>
+            <button
               onClick={() => deleteFile(file.id)}
               className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
             >
@@ -104,6 +116,14 @@ export const FileList = () => {
           )}
         </div>
       </div>
+
+      {shareFileId && (
+        <ShareModal
+          fileId={shareFileId}
+          fileName={shareFileName}
+          onClose={() => setShareFileId(null)}
+        />
+      )}
     </div>
   );
 };

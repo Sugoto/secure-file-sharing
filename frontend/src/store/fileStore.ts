@@ -10,6 +10,7 @@ interface FileStore {
   fetchFiles: () => Promise<void>;
   deleteFile: (fileId: number) => Promise<void>;
   uploadFile: (file: File, password: string) => Promise<void>;
+  shareFile: (fileId: number, username?: string, expiresIn?: number) => Promise<{token?: string}>;
 }
 
 const mapFileDataToInfo = (fileData: FileData): FileInfo => ({
@@ -58,6 +59,19 @@ export const useFileStore = create<FileStore>((set) => ({
       });
     } catch (error) {
       set({ error: "Failed to upload file", isLoading: false });
+    }
+  },
+  shareFile: async (fileId: number, username?: string, expiresIn: number = 24) => {
+    try {
+      const response = await fileService.shareFile({
+        file_id: fileId,
+        shared_with_username: username,
+        expires_in_hours: expiresIn
+      });
+      return { token: response.share_token };
+    } catch (error) {
+      set({ error: "Failed to share file" });
+      return {};
     }
   },
 }));
