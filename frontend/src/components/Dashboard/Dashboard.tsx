@@ -34,7 +34,6 @@ export const Dashboard = () => {
                 <FileUpload />
               </section>
               <section>
-                <h3 className="text-lg font-semibold mb-4">Your Files</h3>
                 <FileList />
               </section>
             </div>

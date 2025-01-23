@@ -1,24 +1,24 @@
-export interface FileMetadata {
-  id: number;
-  filename: string;
-  file_path: string;
-  user_id: number;
-  created_at: string;
-}
-
-export interface FileUploadResponse {
-  filename: string;
-  message: string;
-}
+export type FileData = [
+  number, // id
+  string, // filename
+  number, // user_id
+  string, // file_path
+  string, // encryption_key
+  string, // iv
+  string // created_at
+];
 
 export interface FileListResponse {
-  owned_files: FileMetadata[];
-  shared_files: FileMetadata[];
+  owned_files: FileData[];
+  shared_files: FileData[];
 }
 
 export interface FileShareRequest {
-  file_id: number;
-  shared_with_username?: string;
-  permissions?: string;
-  expires_in_hours?: number;
+  fileId: number;
+  recipientUsername: string;
+}
+
+export interface FileInfo {
+  id: number;
+  filename: string;
 }
