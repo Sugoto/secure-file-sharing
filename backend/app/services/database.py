@@ -6,7 +6,14 @@ DATABASE_PATH = os.path.join(os.path.dirname(__file__), "secure_file_sharing.db"
 
 
 def init_db():
-    """Initialize the database and create tables"""
+    """
+    Initialize the SQLite database and create necessary tables if they don't exist.
+
+    Creates the following tables:
+    - users: Stores user account information
+    - files: Stores uploaded file metadata
+    - file_shares: Stores file sharing information
+    """
     with sqlite3.connect(DATABASE_PATH) as conn:
         cursor = conn.cursor()
 
@@ -61,7 +68,15 @@ def init_db():
 
 @contextmanager
 def get_db_connection():
-    """Provides a database connection with context management"""
+    """
+    Create a database connection with context management.
+
+    Yields:
+        sqlite3.Connection: Database connection object
+
+    Note:
+        Connection is automatically closed when context exits
+    """
     conn = sqlite3.connect(DATABASE_PATH)
     try:
         yield conn
@@ -70,7 +85,16 @@ def get_db_connection():
 
 
 def execute_query(query, params=None):
-    """Execute a database query"""
+    """
+    Execute a database query with optional parameters.
+
+    Args:
+        query (str): SQL query to execute
+        params (tuple, optional): Query parameters
+
+    Returns:
+        sqlite3.Cursor: Query cursor
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         if params:
@@ -82,7 +106,16 @@ def execute_query(query, params=None):
 
 
 def fetch_one(query, params=None):
-    """Fetch a single row from the database"""
+    """
+    Execute a query and fetch a single row.
+
+    Args:
+        query (str): SQL query to execute
+        params (tuple, optional): Query parameters
+
+    Returns:
+        tuple: Single row result or None if no results
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         if params:
@@ -93,7 +126,16 @@ def fetch_one(query, params=None):
 
 
 def fetch_all(query, params=None):
-    """Fetch all rows from the database"""
+    """
+    Execute a query and fetch all rows.
+
+    Args:
+        query (str): SQL query to execute
+        params (tuple, optional): Query parameters
+
+    Returns:
+        List[tuple]: List of result rows
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         if params:
