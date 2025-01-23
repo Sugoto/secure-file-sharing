@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { FileMetadata } from '../types/file';
-import { fileService } from '../services/fileService';
+import { create } from "zustand";
+import { FileMetadata } from "../types/file";
+import { fileService } from "../services/fileService";
 
 interface FileState {
   ownedFiles: FileMetadata[];
@@ -28,7 +28,10 @@ export const useFileStore = create<FileState>((set) => ({
         isLoading: false,
       });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch files', isLoading: false });
+      set({
+        error: error.message || "Failed to fetch files",
+        isLoading: false,
+      });
     }
   },
 
@@ -43,7 +46,7 @@ export const useFileStore = create<FileState>((set) => ({
         isLoading: false,
       });
     } catch (error) {
-      set({ error: 'Failed to upload file', isLoading: false });
+      set({ error: "Failed to upload file", isLoading: false });
     }
   },
 
@@ -58,7 +61,7 @@ export const useFileStore = create<FileState>((set) => ({
         isLoading: false,
       });
     } catch (error) {
-      set({ error: 'Failed to delete file', isLoading: false });
+      set({ error: "Failed to delete file", isLoading: false });
     }
   },
 }));

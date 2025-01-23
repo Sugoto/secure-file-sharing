@@ -15,6 +15,7 @@ import random
 import string
 from email.message import EmailMessage
 import smtplib
+import asyncio
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_very_secret_key")
 ALGORITHM = "HS256"
@@ -40,7 +41,23 @@ def check_roles(required_roles: List[str]):
 
     def decorator(func):
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        def sync_wrapper(*args, **kwargs):
+            current_user = kwargs.get("current_user")
+            if not current_user or "role" not in current_user:
+                raise HTTPException(status_code=403, detail="Not authorized")
+
+            user_role = current_user["role"]
+            if user_role not in ROLES or not any(
+                role in required_roles for role in ROLES[user_role]
+            ):
+                raise HTTPException(
+                    status_code=403, detail="Not authorized for this action"
+                )
+
+            return func(*args, **kwargs)
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
             current_user = kwargs.get("current_user")
             if not current_user or "role" not in current_user:
                 raise HTTPException(status_code=403, detail="Not authorized")
@@ -55,7 +72,7 @@ def check_roles(required_roles: List[str]):
 
             return await func(*args, **kwargs)
 
-        return wrapper
+        return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
     return decorator
 

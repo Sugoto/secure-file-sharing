@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useFileStore } from '../../store/fileStore';
-import { fileService } from '../../services/fileService';
+import { useEffect, useState } from "react";
+import { useFileStore } from "../../store/fileStore";
+import { fileService } from "../../services/fileService";
 
 export const FileList = () => {
-  const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } = useFileStore();
-  const [downloadPassword, setDownloadPassword] = useState('');
+  const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =
+    useFileStore();
+  const [downloadPassword, setDownloadPassword] = useState("");
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -15,16 +16,17 @@ export const FileList = () => {
     try {
       const blob = await fileService.downloadFile(fileId, downloadPassword);
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = ownedFiles.find(f => f.id === fileId)?.filename || 'download';
+      a.download =
+        ownedFiles.find((f) => f.id === fileId)?.filename || "download";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      setDownloadPassword('');
+      setDownloadPassword("");
       setSelectedFileId(null);
     } catch (err) {
-      console.error('Download failed:', err);
+      console.error("Download failed:", err);
     }
   };
 
