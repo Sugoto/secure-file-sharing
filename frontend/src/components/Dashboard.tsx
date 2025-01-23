@@ -11,7 +11,7 @@ export const Dashboard = () => {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold">Secure File Sharing</h1>
+            <h1 className="text-xl font-semibold">SecureShare</h1>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">Welcome, {user?.username}</span>
               <button
