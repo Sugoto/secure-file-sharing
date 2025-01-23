@@ -1,4 +1,6 @@
 import { useAuthStore } from "../../store/authStore";
+import { FileUpload } from "../FileUpload/FileUpload";
+import { FileList } from "../FileList/FileList";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
@@ -24,8 +26,18 @@ export const Dashboard = () => {
       </nav>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
-            <h2 className="text-2xl font-bold mb-4">Dashboard Content</h2>
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-6">File Management</h2>
+            <div className="space-y-8">
+              <section>
+                <h3 className="text-lg font-semibold mb-4">Upload New File</h3>
+                <FileUpload />
+              </section>
+              <section>
+                <h3 className="text-lg font-semibold mb-4">Your Files</h3>
+                <FileList />
+              </section>
+            </div>
           </div>
         </div>
       </main>
