@@ -3,11 +3,12 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, File, UploadFile, Depends, HTTPException
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Form
 from pydantic import BaseModel
 
 from app.services.database import execute_query, fetch_one, fetch_all
-from app.services.security import SecurityService
+from app.services.security import SecurityService, FileEncryptor
+import base64
 
 router = APIRouter(prefix="/files", tags=["File Management"])
 
@@ -32,6 +33,7 @@ class FileMetadata(BaseModel):
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
+    password: str = Form(...),
     current_user: dict = Depends(SecurityService.get_current_user),
 ):
     user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
@@ -42,18 +44,34 @@ async def upload_file(
     unique_filename = f"{uuid.uuid4()}_{file.filename}"
     file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
 
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    encryption_key, salt = FileEncryptor.generate_key(password)
+
     try:
-        with open(file_path, "wb") as buffer:
-            buffer.write(await file.read())
+        encrypted_path = FileEncryptor.encrypt_file(file_path, encryption_key)
+
+        execute_query(
+            "INSERT INTO files (filename, user_id, file_path, encrypted_key, encryption_salt) VALUES (?, ?, ?, ?, ?)",
+            (
+                file.filename,
+                user_id,
+                encrypted_path,
+                base64.urlsafe_b64encode(encryption_key).decode(),
+                base64.urlsafe_b64encode(salt).decode(),
+            ),
+        )
+
+        return {
+            "filename": file.filename,
+            "message": "File uploaded and encrypted successfully",
+        }
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
-
-    execute_query(
-        "INSERT INTO files (filename, user_id, file_path, encrypted_key) VALUES (?, ?, ?, ?)",
-        (file.filename, user_id, file_path, "placeholder_encrypted_key"),
-    )
-
-    return {"filename": file.filename, "message": "File uploaded successfully"}
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"Encryption failed: {str(e)}")
 
 
 @router.post("/share")
@@ -114,7 +132,9 @@ def list_user_files(current_user: dict = Depends(SecurityService.get_current_use
 
 @router.get("/download/{file_id}")
 def download_file(
-    file_id: int, current_user: dict = Depends(SecurityService.get_current_user)
+    file_id: int,
+    password: str,
+    current_user: dict = Depends(SecurityService.get_current_user),
 ):
     user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
     if not user:
@@ -123,19 +143,30 @@ def download_file(
 
     file = fetch_one(
         """
-        SELECT f.* FROM files f
-        LEFT JOIN file_shares fs ON f.id = fs.file_id
-        WHERE (f.user_id = ? OR 
-               (fs.shared_with = ? AND fs.expires_at > CURRENT_TIMESTAMP))
-        AND f.id = ?
+        SELECT * FROM files 
+        WHERE id = ? AND 
+        (user_id = ? OR 
+         id IN (SELECT file_id FROM file_shares WHERE shared_with = ? AND expires_at > CURRENT_TIMESTAMP))
         """,
-        (user_id, user_id, file_id),
+        (file_id, user_id, user_id),
     )
 
     if not file:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return {"filename": file[1], "file_path": file[3], "encrypted_key": file[4]}
+    try:
+        stored_key = base64.urlsafe_b64decode(file[4])
+        salt = base64.urlsafe_b64decode(file[5])
+
+        derived_key, _ = FileEncryptor.generate_key(password, salt)
+
+        decrypted_path = FileEncryptor.decrypt_file(file[3], derived_key)
+
+        return {"filename": file[1], "file_path": decrypted_path}
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail="Decryption failed. Check your password."
+        )
 
 
 @router.delete("/delete/{file_id}")
