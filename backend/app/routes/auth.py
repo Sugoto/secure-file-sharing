@@ -1,9 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-
 from app.services.database import execute_query, fetch_one
-from app.services.security import hash_password, verify_password, create_access_token
+from app.services.security import SecurityService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -32,7 +31,7 @@ def register_user(user: UserCreate):
             status_code=400, detail="Username or email already registered"
         )
 
-    hashed_password = hash_password(user.password)
+    hashed_password = SecurityService.hash_password(user.password)
 
     try:
         execute_query(
@@ -51,13 +50,20 @@ def login_user(user: UserLogin):
     if not db_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not verify_password(user.password, db_user[3]):
+    if not SecurityService.verify_password(user.password, db_user[3]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token = create_access_token(data={"sub": user.username, "role": db_user[4]})
+    access_token = SecurityService.create_access_token(
+        data={"sub": user.username, "role": db_user[4]}
+    )
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": {"username": db_user[1], "email": db_user[2], "role": db_user[4]},
     }
+
+
+@router.get("/validate-token")
+def validate_token(token_data: dict = Depends(SecurityService.get_current_user)):
+    return {"valid": True, "user": token_data}

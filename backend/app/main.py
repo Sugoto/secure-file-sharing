@@ -20,7 +20,3 @@ app.include_router(files.router)
 @app.get("/")
 def read_root():
     return {"message": "Secure File Sharing API"}
-
-
-
-
