@@ -192,3 +192,31 @@ async def update_user_role(
 
     execute_query("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
     return {"message": "User role updated successfully"}
+
+
+@router.delete("/users/{user_id}")
+@check_roles(["admin"])
+async def delete_user(
+    user_id: int, current_user: dict = Depends(SecurityService.get_current_user)
+):
+    user = fetch_one("SELECT id FROM users WHERE id = ?", (user_id,))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_files = fetch_all(
+        "SELECT id, file_path FROM files WHERE user_id = ?", (user_id,)
+    )
+    for file in user_files:
+        try:
+            os.remove(file[1])
+        except FileNotFoundError:
+            pass
+
+    execute_query(
+        "DELETE FROM file_shares WHERE shared_by = ? OR shared_with = ?",
+        (user_id, user_id),
+    )
+    execute_query("DELETE FROM files WHERE user_id = ?", (user_id,))
+    execute_query("DELETE FROM users WHERE id = ?", (user_id,))
+
+    return {"message": "User deleted successfully"}

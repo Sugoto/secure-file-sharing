@@ -57,4 +57,9 @@ export const authService = {
   async deleteAccount(): Promise<void> {
     await axiosInstance.delete("/auth/account");
   },
+
+  async deleteUser(userId: number) {
+    const response = await axiosInstance.delete(`/auth/users/${userId}`);
+    return response.data;
+  },
 };
