@@ -24,7 +24,7 @@ export interface FileListResponse {
   shared_files: File[];
 }
 
-export interface ShareRequest {
+export interface FileShareRequest {
   file_id: number;
   shared_with_username?: string;
   expires_in_hours?: number;

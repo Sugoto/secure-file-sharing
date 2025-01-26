@@ -201,13 +201,15 @@ def list_user_files(current_user: dict = Depends(SecurityService.get_current_use
 @router.get("/download/{file_id}")
 def download_file(
     file_id: int,
-    password: str,
+    password: Optional[str] = None,
     current_user: dict = Depends(SecurityService.get_current_user),
 ):
-    user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
+    user = fetch_one(
+        "SELECT id, role FROM users WHERE username = ?", (current_user["sub"],)
+    )
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user_id = user[0]
+    user_id, user_role = user[0], user[1]
 
     file = fetch_one(
         """
@@ -219,14 +221,25 @@ def download_file(
         (file_id, user_id, user_id),
     )
 
-    if not file:
+    if not file and user_role != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
+
+    if not file and user_role == "admin":
+        file = fetch_one("SELECT * FROM files WHERE id = ?", (file_id,))
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
 
     try:
         stored_key = base64.urlsafe_b64decode(file[4])
         salt = base64.urlsafe_b64decode(file[5])
 
-        derived_key, _ = FileEncryptor.generate_key(password, salt)
+        if user_role == "admin" and not password:
+            derived_key = stored_key
+        else:
+            if not password:
+                raise HTTPException(status_code=400, detail="Password is required")
+            derived_key, _ = FileEncryptor.generate_key(password, salt)
+
         decrypted_path = FileEncryptor.decrypt_file(file[3], derived_key)
 
         def cleanup(decrypted_path=decrypted_path):
