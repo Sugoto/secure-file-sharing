@@ -64,9 +64,9 @@ const Login = () => {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col h-full">
         {error && <div className="text-red-500 text-center">{error}</div>}
-        <div className="space-y-2">
+        <div className="space-y-2 flex-grow">
           <Input
             type="text"
             required
@@ -82,7 +82,7 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full mt-auto" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -158,9 +158,9 @@ const Register = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col h-full">
       {error && <div className="text-red-500 text-center">{error}</div>}
-      <div className="space-y-2">
+      <div className="space-y-2 flex-grow">
         <Input
           type="text"
           required
@@ -188,23 +188,23 @@ const Register = () => {
             setFormData((prev) => ({ ...prev, password: e.target.value }))
           }
         />
+        <div className="flex items-center space-x-2 pt-4">
+          <Checkbox
+            id="mfa"
+            checked={formData.mfa_enabled}
+            onCheckedChange={(checked: boolean) =>
+              setFormData((prev) => ({ ...prev, mfa_enabled: checked }))
+            }
+          />
+          <label
+            htmlFor="mfa"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Enable Two-Factor Authentication
+          </label>
+        </div>
       </div>
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="mfa"
-          checked={formData.mfa_enabled}
-          onCheckedChange={(checked) =>
-            setFormData((prev) => ({ ...prev, mfa_enabled: !!checked }))
-          }
-        />
-        <label
-          htmlFor="mfa"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Enable Two-Factor Authentication
-        </label>
-      </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full mt-auto" disabled={isLoading}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -221,17 +221,17 @@ const Register = () => {
 export const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-6 h-[400px]">
+      <Card className="w-full max-w-md p-6">
         <Title />
-        <Tabs defaultValue="login" className="mt-6 h-[calc(100%-80px)]">
+        <Tabs defaultValue="login" className="mt-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
-          <TabsContent value="login" className="mt-6">
+          <TabsContent value="login" className="mt-6 h-[220px]">
             <Login />
           </TabsContent>
-          <TabsContent value="register" className="mt-6">
+          <TabsContent value="register" className="mt-6 h-[220px]">
             <Register />
           </TabsContent>
         </Tabs>
