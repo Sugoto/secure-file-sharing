@@ -2,8 +2,15 @@ import { useAuthStore } from "../store/authStore";
 import { FileList } from "./FileList";
 import { FileUploadModal } from "./FileUploadModal";
 import { Button } from "./ui/button";
+import { Card } from "./ui/card";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, User } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
@@ -12,21 +19,29 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <Card className="shadow-sm">
+          <div className="flex justify-between items-center h-16 px-4">
             <h1 className="text-xl font-semibold">SecureShare</h1>
             <div className="flex items-center space-x-4">
-              <span className="text-muted-foreground">
-                Welcome, {user?.username}
-              </span>
-              <Button variant="outline" onClick={logout}>
-                Logout
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-2"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>{user?.username}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-        </div>
-      </nav>
+        </Card>
+      </div>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
