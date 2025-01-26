@@ -50,6 +50,7 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
 
         <Tabs
           value={shareType}
+          // @ts-ignore
           onValueChange={(value: "user" | "link") => setShareType(value)}
         >
           <TabsList className="grid w-full grid-cols-2">

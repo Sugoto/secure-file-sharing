@@ -21,10 +21,11 @@ class FileService {
   }
 
   async downloadFile(fileId: number, password?: string) {
-    const response = await axiosInstance.get(
-      `/files/download/${fileId}?password=${password}`,
-      { responseType: "blob" }
-    );
+    const url = `/files/download/${fileId}`;
+    const queryParams = password ? `?password=${password}` : "";
+    const response = await axiosInstance.get(url + queryParams, {
+      responseType: "blob",
+    });
     return response.data;
   }
 

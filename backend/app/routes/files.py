@@ -211,29 +211,28 @@ def download_file(
         raise HTTPException(status_code=404, detail="User not found")
     user_id, user_role = user[0], user[1]
 
-    file = fetch_one(
-        """
-        SELECT * FROM files 
-        WHERE id = ? AND 
-        (user_id = ? OR 
-         id IN (SELECT file_id FROM file_shares WHERE shared_with = ? AND expires_at > CURRENT_TIMESTAMP))
-        """,
-        (file_id, user_id, user_id),
-    )
-
-    if not file and user_role != "admin":
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    if not file and user_role == "admin":
+    if user_role == "admin":
         file = fetch_one("SELECT * FROM files WHERE id = ?", (file_id,))
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
+    else:
+        file = fetch_one(
+            """
+            SELECT * FROM files 
+            WHERE id = ? AND 
+            (user_id = ? OR 
+             id IN (SELECT file_id FROM file_shares WHERE shared_with = ? AND expires_at > CURRENT_TIMESTAMP))
+            """,
+            (file_id, user_id, user_id),
+        )
+        if not file:
+            raise HTTPException(status_code=403, detail="Access denied")
 
     try:
         stored_key = base64.urlsafe_b64decode(file[4])
         salt = base64.urlsafe_b64decode(file[5])
 
-        if user_role == "admin" and not password:
+        if user_role == "admin":
             derived_key = stored_key
         else:
             if not password:
