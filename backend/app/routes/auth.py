@@ -1,34 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
+from app.models import UserCreate, UserLogin, MFAVerify, UserRoleUpdate
 import os
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-    role: Optional[str] = "user"
-    mfa_enabled: Optional[bool] = False
-
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-
-class MFAVerify(BaseModel):
-    username: str
-    code: str
-
-
-class UserRoleUpdate(BaseModel):
-    role: str
 
 
 @router.post("/register")

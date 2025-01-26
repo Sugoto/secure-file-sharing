@@ -5,35 +5,16 @@ from typing import List, Optional
 
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Form
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
 
 from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
+from app.models import FileShare, FileMetadata, ShareLinkCreate
 import base64
 
 router = APIRouter(prefix="/files", tags=["File Management"])
 
 UPLOAD_DIRECTORY = "uploads"
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
-
-
-class FileShare(BaseModel):
-    file_id: int
-    shared_with_username: Optional[str] = None
-    permissions: str = "view"
-    expires_in_hours: Optional[int] = 24
-
-
-class FileMetadata(BaseModel):
-    filename: str
-    file_path: str
-    user_id: int
-    encrypted_key: str
-
-
-class ShareLinkCreate(BaseModel):
-    file_id: int
-    expires_in_hours: Optional[int] = 24
 
 
 @router.post("/upload")
