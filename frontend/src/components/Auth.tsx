@@ -7,11 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Title } from "./Title";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showMFA, setShowMFA] = useState(false);
+  const [mfaCode, setMFACode] = useState("");
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
@@ -19,36 +27,79 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await authService.login({ username, password });
-      login(response);
-      navigate("/dashboard");
+
+      if (response.require_mfa) {
+        setShowMFA(true);
+      } else if (response.access_token) {
+        login(response);
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     }
   };
 
+  const handleMFASubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await authService.verifyMFA({
+        username,
+        code: mfaCode,
+      });
+      login(response);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "MFA verification failed");
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="text-red-500 text-center">{error}</div>}
-      <div className="space-y-2">
-        <Input
-          type="text"
-          required
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <Input
-          type="password"
-          required
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <Button type="submit" className="w-full">
-        Sign in
-      </Button>
-    </form>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="text-red-500 text-center">{error}</div>}
+        <div className="space-y-2">
+          <Input
+            type="text"
+            required
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <Input
+            type="password"
+            required
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <Button type="submit" className="w-full">
+          Sign in
+        </Button>
+      </form>
+
+      <Dialog open={showMFA} onOpenChange={setShowMFA}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter MFA Code</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleMFASubmit} className="space-y-4">
+            <Input
+              type="text"
+              required
+              placeholder="Enter MFA code"
+              value={mfaCode}
+              onChange={(e) => setMFACode(e.target.value)}
+              pattern="\d{6}"
+              maxLength={6}
+            />
+            <Button type="submit" className="w-full">
+              Verify
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

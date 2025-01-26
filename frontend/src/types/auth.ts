@@ -11,6 +11,11 @@ export interface UserLogin {
     password: string;
 }
 
+export interface MFAVerify {
+    username: string;
+    code: string;
+}
+
 export interface AuthResponse {
     access_token: string;
     token_type: string;
@@ -19,6 +24,16 @@ export interface AuthResponse {
         email: string;
         role: string;
     };
+}
+
+export interface LoginResponse {
     message?: string;
     require_mfa?: boolean;
+    access_token?: string;
+    token_type?: string;
+    user?: {
+        username: string;
+        email: string;
+        role: string;
+    };
 }

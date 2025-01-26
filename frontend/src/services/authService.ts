@@ -1,4 +1,4 @@
-import { UserCreate, UserLogin, AuthResponse } from "../types/auth";
+import { UserCreate, UserLogin, AuthResponse, LoginResponse, MFAVerify } from "../types/auth";
 import { axiosInstance } from "../config/axios";
 
 export const authService = {
@@ -7,8 +7,13 @@ export const authService = {
     return data;
   },
 
-  async login(credentials: UserLogin): Promise<AuthResponse> {
+  async login(credentials: UserLogin): Promise<LoginResponse> {
     const { data } = await axiosInstance.post("/auth/login", credentials);
+    return data;
+  },
+
+  async verifyMFA(verifyData: MFAVerify): Promise<AuthResponse> {
+    const { data } = await axiosInstance.post("/auth/verify-mfa", verifyData);
     return data;
   },
 
