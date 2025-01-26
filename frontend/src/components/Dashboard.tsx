@@ -3,6 +3,7 @@ import { FileList } from "./FileList";
 import { FileUploadModal } from "./FileUploadModal";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
 import { useState } from "react";
 import { Plus, User } from "lucide-react";
 import {
@@ -45,6 +46,9 @@ export const Dashboard = () => {
                   >
                     <User className="h-4 w-4" />
                     <span>{user?.username}</span>
+                    <Badge variant="outline" className="ml-2 capitalize">
+                      {user?.role}
+                    </Badge>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
