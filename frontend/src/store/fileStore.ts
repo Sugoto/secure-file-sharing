@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { fileService } from "../services/fileService";
-import { File, ShareRequest, ShareResponse } from "../types/file";
+import { File, FileShareRequest, ShareResponse } from "../types/file";
 
 interface FileStore {
   ownedFiles: File[];
@@ -10,7 +10,7 @@ interface FileStore {
   fetchFiles: () => Promise<void>;
   deleteFile: (id: number) => Promise<void>;
   uploadFile: (file: Blob, password: string) => Promise<void>;
-  shareFile: (request: ShareRequest) => Promise<ShareResponse | undefined>;
+  shareFile: (request: FileShareRequest) => Promise<ShareResponse | undefined>;
 }
 
 interface ShareData {
@@ -18,6 +18,11 @@ interface ShareData {
   shared_with_username?: string;
   permissions: "view" | "download";
   expires_in_hours: number;
+}
+
+interface ShareResponse {
+  message: string;
+  share_token?: string;
 }
 
 export const useFileStore = create<FileStore>((set) => ({
@@ -67,7 +72,7 @@ export const useFileStore = create<FileStore>((set) => ({
     }
   },
 
-  shareFile: async (shareData: ShareData) => {
+  shareFile: async (shareData: ShareData): Promise<ShareResponse> => {
     try {
       const response = await fileService.shareFile(shareData);
       set({ error: null });

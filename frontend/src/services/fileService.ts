@@ -38,6 +38,13 @@ class FileService {
     const response = await axiosInstance.delete(`/files/delete/${fileId}`);
     return response.data;
   }
+
+  async accessSharedFile(token: string, password: string): Promise<Blob> {
+    const response = await axiosInstance.get(`/api/files/shared/${token}?password=${password}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
 }
 
 export const fileService = new FileService();

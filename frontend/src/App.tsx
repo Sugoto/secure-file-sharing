@@ -8,6 +8,7 @@ import { Dashboard } from "./components/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuthStore } from "./store/authStore";
 import { Auth } from "./components/Auth";
+import { SharedFilePage } from "./pages/SharedFilePage";
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -29,6 +30,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/shared/:token" element={<SharedFilePage />} />
       </Routes>
     </Router>
   );

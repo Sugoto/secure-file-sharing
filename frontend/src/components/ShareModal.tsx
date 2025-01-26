@@ -26,24 +26,38 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
   const [shareType, setShareType] = useState<"user" | "link">("user");
   const [shareLink, setShareLink] = useState("");
   const [permission, setPermission] = useState<"view" | "download">("view");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const { shareFile } = useFileStore();
 
   const handleShare = async () => {
-    if (shareType === "user" && !username) return;
+    if (shareType === "user" && !username) {
+      setError("Please enter a username");
+      return;
+    }
 
-    const shareData = {
-      file_id: fileId,
-      shared_with_username: shareType === "user" ? username : undefined,
-      permissions: permission,
-      expires_in_hours: expiresIn,
-    };
+    setIsLoading(true);
+    setError("");
 
-    const { token } = await shareFile(shareData);
+    try {
+      const shareData = {
+        file_id: fileId,
+        shared_with_username: shareType === "user" ? username : undefined,
+        permissions: permission,
+        expires_in_hours: expiresIn,
+      };
 
-    if (shareType === "link" && token) {
-      setShareLink(`${window.location.origin}/shared/${token}`);
-    } else {
-      onClose();
+      const response = await shareFile(shareData);
+
+      if (shareType === "link" && response?.share_token) {
+        setShareLink(`${window.location.origin}/shared/${response.share_token}`);
+      } else if (shareType === "user") {
+        onClose();
+      }
+    } catch (err) {
+      setError("Failed to share file. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,7 +70,6 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
 
         <Tabs
           value={shareType}
-          // @ts-ignore
           onValueChange={(value: "user" | "link") => setShareType(value)}
         >
           <TabsList className="grid w-full grid-cols-2">
@@ -75,29 +88,58 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
                   placeholder="Enter username"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Permission</Label>
-                <ToggleGroup
-                  type="single"
-                  value={permission}
-                  onValueChange={(value) =>
-                    setPermission(value as "view" | "download")
-                  }
-                  className="justify-start"
-                >
-                  <ToggleGroupItem value="view" aria-label="View only">
-                    <EyeIcon className="h-4 w-4 mr-2" />
-                    View
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="download" aria-label="Download">
-                    <DownloadIcon className="h-4 w-4 mr-2" />
-                    Download
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="link" className="mt-4">
+            <div className="space-y-4">
+              {shareLink ? (
+                <div className="space-y-2">
+                  <Label htmlFor="shareLink">Share Link</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="shareLink"
+                      value={shareLink}
+                      readOnly
+                      className="bg-muted"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => navigator.clipboard.writeText(shareLink)}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Click Share to generate a link
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className="space-y-2">
+          <Label>Permission</Label>
+          <ToggleGroup
+            type="single"
+            value={permission}
+            onValueChange={(value) =>
+              setPermission(value as "view" | "download")
+            }
+            className="justify-start"
+          >
+            <ToggleGroupItem value="view" aria-label="View only">
+              <EyeIcon className="h-4 w-4 mr-2" />
+              View
+            </ToggleGroupItem>
+            <ToggleGroupItem value="download" aria-label="Download">
+              <DownloadIcon className="h-4 w-4 mr-2" />
+              Download
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="expires">Expires In (hours)</Label>
@@ -110,23 +152,15 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
           />
         </div>
 
-        {shareLink && (
-          <div className="space-y-2">
-            <Label htmlFor="shareLink">Share Link</Label>
-            <Input
-              id="shareLink"
-              value={shareLink}
-              readOnly
-              className="bg-muted"
-            />
-          </div>
-        )}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleShare}>Share</Button>
+          <Button onClick={handleShare} disabled={isLoading}>
+            {isLoading ? "Sharing..." : "Share"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
