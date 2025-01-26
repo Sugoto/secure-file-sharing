@@ -4,17 +4,23 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
 from app.models import FileShare, FileMetadata, ShareLinkCreate
 import base64
+from cryptography.fernet import Fernet
 
 router = APIRouter(prefix="/files", tags=["File Management"])
 
 UPLOAD_DIRECTORY = "uploads"
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
+
+SERVER_KEY = (
+    Fernet.generate_key() if not os.getenv("SERVER_KEY") else os.getenv("SERVER_KEY")
+)
+fernet = Fernet(SERVER_KEY)
 
 
 @router.post("/upload")
@@ -34,7 +40,9 @@ async def upload_file(
     file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
 
     with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
+        content = await file.read()
+        encrypted_content = fernet.encrypt(content)
+        buffer.write(encrypted_content)
 
     iv_bytes = await iv.read()
     salt_bytes = await salt.read()
@@ -224,8 +232,14 @@ async def download_file(
         "Access-Control-Expose-Headers": "X-IV, X-Salt",
     }
 
-    return FileResponse(
-        file_path, headers=headers, media_type="application/octet-stream"
+    with open(file_path, "rb") as f:
+        encrypted_content = f.read()
+        decrypted_content = fernet.decrypt(encrypted_content)
+
+    return Response(
+        content=decrypted_content,
+        headers=headers,
+        media_type="application/octet-stream",
     )
 
 
