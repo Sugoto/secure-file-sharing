@@ -7,7 +7,7 @@ import {
 import { Dashboard } from "./components/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuthStore } from "./store/authStore";
-import { AuthTabs } from "./components/AuthTabs";
+import { Auth } from "./components/Auth";
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -18,11 +18,7 @@ function App() {
         <Route
           path="/"
           element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <AuthTabs />
-            )
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <Auth />
           }
         />
         <Route
