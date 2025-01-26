@@ -34,11 +34,13 @@ export const FileList = () => {
     isOwned: boolean;
   }) => {
     const [downloadPassword, setDownloadPassword] = useState("");
+    const [downloadError, setDownloadError] = useState("");
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     const isAdmin = currentUser.role === "admin";
 
     const handleLocalDownload = async () => {
       try {
+        setDownloadError("");
         const blob = await fileService.downloadFile(file.id, downloadPassword);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -49,8 +51,11 @@ export const FileList = () => {
         window.URL.revokeObjectURL(url);
         setDownloadPassword("");
         setSelectedFileId(null);
-      } catch (err) {
-        console.error("Download failed:", err);
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Invalid password";
+        setDownloadError(errorMessage);
+        console.error("Download failed:", error);
       }
     };
 
@@ -66,27 +71,37 @@ export const FileList = () => {
         </div>
         <div className="flex gap-2">
           {selectedFileId === file.id ? (
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                value={downloadPassword}
-                onChange={(e) => setDownloadPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-40"
-              />
-              <Button size="sm" variant="default" onClick={handleLocalDownload}>
-                Confirm
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setSelectedFileId(null);
-                  setDownloadPassword("");
-                }}
-              >
-                Cancel
-              </Button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  value={downloadPassword}
+                  onChange={(e) => setDownloadPassword(e.target.value)}
+                  placeholder="Enter password"
+                  className="w-40"
+                />
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={handleLocalDownload}
+                >
+                  Confirm
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedFileId(null);
+                    setDownloadPassword("");
+                    setDownloadError("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+              {downloadError && (
+                <p className="text-sm text-red-500">{downloadError}</p>
+              )}
             </div>
           ) : (
             <>
