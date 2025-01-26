@@ -40,7 +40,8 @@ class ShareLinkCreate(BaseModel):
 @check_roles(["user", "admin"])
 async def upload_file(
     file: UploadFile = File(...),
-    password: str = Form(...),
+    iv: UploadFile = File(...),
+    salt: UploadFile = File(...),
     current_user: dict = Depends(SecurityService.get_current_user),
 ):
     user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
@@ -51,34 +52,29 @@ async def upload_file(
     unique_filename = f"{uuid.uuid4()}_{file.filename}"
     file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
 
+    # Store the encrypted file
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
-    encryption_key, salt = FileEncryptor.generate_key(password)
+    # Read IV and salt
+    iv_bytes = await iv.read()
+    salt_bytes = await salt.read()
 
-    try:
-        encrypted_path = FileEncryptor.encrypt_file(file_path, encryption_key)
+    # Store file metadata
+    execute_query(
+        """INSERT INTO files 
+           (filename, user_id, file_path, iv, salt) 
+           VALUES (?, ?, ?, ?, ?)""",
+        (
+            file.filename,
+            user_id,
+            file_path,
+            iv_bytes,
+            salt_bytes,
+        ),
+    )
 
-        execute_query(
-            "INSERT INTO files (filename, user_id, file_path, encrypted_key, encryption_salt) VALUES (?, ?, ?, ?, ?)",
-            (
-                file.filename,
-                user_id,
-                encrypted_path,
-                base64.urlsafe_b64encode(encryption_key).decode(),
-                base64.urlsafe_b64encode(salt).decode(),
-            ),
-        )
-
-        return {
-            "filename": file.filename,
-            "message": "File uploaded and encrypted successfully",
-        }
-
-    except Exception as e:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        raise HTTPException(status_code=500, detail=f"Encryption failed: {str(e)}")
+    return {"message": "File uploaded successfully"}
 
 
 @router.post("/share")
@@ -200,9 +196,8 @@ def list_user_files(current_user: dict = Depends(SecurityService.get_current_use
 
 
 @router.get("/download/{file_id}")
-def download_file(
+async def download_file(
     file_id: int,
-    password: Optional[str] = None,
     current_user: dict = Depends(SecurityService.get_current_user),
 ):
     user = fetch_one(
@@ -236,41 +231,25 @@ def download_file(
 
         file = file_and_permission[:-1]
 
-    try:
-        stored_key = base64.urlsafe_b64decode(file[4])
-        salt = base64.urlsafe_b64decode(file[5])
+    file = fetch_one("SELECT filename, file_path, iv, salt FROM files WHERE id = ?", (file_id,))
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
 
-        if user_role == "admin":
-            derived_key = stored_key
-        else:
-            if not password:
-                raise HTTPException(status_code=400, detail="Password is required")
-            derived_key, _ = FileEncryptor.generate_key(password, salt)
+    filename, file_path, iv, salt = file
 
-        try:
-            decrypted_path = FileEncryptor.decrypt_file(file[3], derived_key)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Incorrect password for file")
+    # Ensure proper base64 encoding without line breaks or whitespace
+    headers = {
+        "X-IV": base64.b64encode(iv).decode('utf-8').strip(),
+        "X-Salt": base64.b64encode(salt).decode('utf-8').strip(),
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Access-Control-Expose-Headers": "X-IV, X-Salt"  # Important for CORS
+    }
 
-        def cleanup(decrypted_path=decrypted_path):
-            try:
-                os.remove(decrypted_path)
-            except:
-                pass
-
-        return FileResponse(
-            decrypted_path,
-            filename=file[1],
-            background=cleanup,
-            media_type="application/octet-stream",
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail="An unexpected error occurred while processing your request",
-        )
+    return FileResponse(
+        file_path,
+        headers=headers,
+        media_type="application/octet-stream"
+    )
 
 
 @router.delete("/delete/{file_id}")
