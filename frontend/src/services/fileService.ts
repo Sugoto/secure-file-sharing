@@ -1,7 +1,32 @@
 import { axiosInstance } from "../config/axios";
 import { FileListResponse, FileShareRequest } from "../types/file";
 
+/**
+ * Converts a base64 string to Uint8Array
+ */
+const base64ToArrayBuffer = (base64: string): Uint8Array => {
+  const cleanBase64 = base64.replace(/[^A-Za-z0-9+/]/g, "");
+  const paddedBase64 = cleanBase64.padEnd(
+    cleanBase64.length + ((4 - (cleanBase64.length % 4)) % 4),
+    "="
+  );
+
+  const binaryString = atob(paddedBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+};
+
+/**
+ * Handles client-side file encryption/decryption operations
+ */
 class FileEncryption {
+  /**
+   * Generates an encryption key from a password
+   * @returns Tuple of [CryptoKey, salt]
+   */
   static async generateKey(
     password: string,
     salt?: Uint8Array
@@ -37,6 +62,10 @@ class FileEncryption {
     return [key, salt];
   }
 
+  /**
+   * Encrypts a file using AES-GCM
+   * @returns Encrypted file blob and initialization vector
+   */
   static async encryptFile(
     file: File,
     key: CryptoKey
@@ -59,6 +88,9 @@ class FileEncryption {
     };
   }
 
+  /**
+   * Decrypts an encrypted file blob
+   */
   static async decryptFile(
     encryptedBlob: Blob,
     key: CryptoKey,
@@ -82,6 +114,9 @@ class FileEncryption {
   }
 }
 
+/**
+ * Handles file operations including upload, download, sharing and encryption
+ */
 class FileService {
   async uploadFile(file: File, password: string) {
     const [key, salt] = await FileEncryption.generateKey(password);
@@ -105,40 +140,6 @@ class FileService {
     return response.data;
   }
 
-  async downloadFile(fileId: number, password: string, fileName: string) {
-    const response = await axiosInstance.get(`/files/download/${fileId}`, {
-      responseType: "blob",
-    });
-
-    const base64ToArrayBuffer = (base64: string) => {
-      const cleanBase64 = base64.replace(/[^A-Za-z0-9+/]/g, "");
-      const paddedBase64 = cleanBase64.padEnd(
-        cleanBase64.length + ((4 - (cleanBase64.length % 4)) % 4),
-        "="
-      );
-
-      const binaryString = atob(paddedBase64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      return bytes;
-    };
-
-    const iv = base64ToArrayBuffer(response.headers["x-iv"]);
-    const salt = base64ToArrayBuffer(response.headers["x-salt"]);
-
-    const [key] = await FileEncryption.generateKey(password, salt);
-
-    const decryptedFile = await FileEncryption.decryptFile(
-      response.data,
-      key,
-      iv,
-      fileName
-    );
-    return decryptedFile;
-  }
-
   async shareFile(shareDetails: FileShareRequest) {
     const response = await axiosInstance.post("/files/share", shareDetails);
     return response.data;
@@ -149,44 +150,44 @@ class FileService {
     return response.data;
   }
 
+  /**
+   * Common method to handle file decryption response
+   */
+  private async decryptFileResponse(
+    response: any,
+    password: string,
+    fileName: string
+  ): Promise<File> {
+    const iv = base64ToArrayBuffer(response.headers["x-iv"]);
+    const salt = base64ToArrayBuffer(response.headers["x-salt"]);
+    const [key] = await FileEncryption.generateKey(password, salt);
+
+    return FileEncryption.decryptFile(response.data, key, iv, fileName);
+  }
+
+  async downloadFile(
+    fileId: number,
+    password: string,
+    fileName: string
+  ): Promise<File> {
+    const response = await axiosInstance.get(`/files/download/${fileId}`, {
+      responseType: "blob",
+    });
+    return this.decryptFileResponse(response, password, fileName);
+  }
+
   async accessSharedFile(token: string, password: string): Promise<File> {
     const response = await axiosInstance.get(
       `/files/shared/${token}?password=${password}`,
-      {
-        responseType: "blob",
-      }
+      { responseType: "blob" }
     );
 
-    const base64ToArrayBuffer = (base64: string) => {
-      const cleanBase64 = base64.replace(/[^A-Za-z0-9+/]/g, "");
-      const paddedBase64 = cleanBase64.padEnd(
-        cleanBase64.length + ((4 - (cleanBase64.length % 4)) % 4),
-        "="
-      );
-
-      const binaryString = atob(paddedBase64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      return bytes;
-    };
-
-    const iv = base64ToArrayBuffer(response.headers["x-iv"]);
-    const salt = base64ToArrayBuffer(response.headers["x-salt"]);
     const fileName =
       response.headers["content-disposition"]
         ?.split("filename=")[1]
         ?.replace(/"/g, "") || "shared-file";
 
-    const [key] = await FileEncryption.generateKey(password, salt);
-    const decryptedFile = await FileEncryption.decryptFile(
-      response.data,
-      key,
-      iv,
-      fileName
-    );
-    return decryptedFile;
+    return this.decryptFileResponse(response, password, fileName);
   }
 }
 
