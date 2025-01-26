@@ -15,12 +15,23 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { authService } from "../services/authService";
 import { UserManagement } from "./UserManagement";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleMFAToggle = async () => {
     try {
@@ -28,6 +39,15 @@ export const Dashboard = () => {
       setMfaEnabled(response.mfa_enabled);
     } catch (error) {
       console.error("Failed to toggle MFA:", error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await authService.deleteAccount();
+      logout();
+    } catch (error) {
+      console.error("Failed to delete account:", error);
     }
   };
 
@@ -63,6 +83,12 @@ export const Dashboard = () => {
                       />
                     </div>
                   </div>
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-red-600"
+                  >
+                    Delete Account
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -90,6 +116,26 @@ export const Dashboard = () => {
           )}
         </div>
       </main>
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              account and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-red-600"
+            >
+              Delete Account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

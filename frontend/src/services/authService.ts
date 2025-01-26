@@ -55,4 +55,8 @@ export const authService = {
       new_role: newRole,
     });
   },
+
+  async deleteAccount(): Promise<void> {
+    await axiosInstance.delete("/auth/account");
+  },
 };
