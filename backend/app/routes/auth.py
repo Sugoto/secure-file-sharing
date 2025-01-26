@@ -162,8 +162,18 @@ def validate_token(token_data: dict = Depends(SecurityService.get_current_user))
 @router.get("/users")
 @check_roles(["admin"])
 async def list_users(current_user: dict = Depends(SecurityService.get_current_user)):
-    users = fetch_all("SELECT id, username, email, role, created_at FROM users")
-    return {"users": users}
+    users_raw = fetch_all("SELECT id, username, email, role, created_at FROM users")
+    formatted_users = [
+        {
+            "id": user[0],
+            "username": user[1],
+            "email": user[2],
+            "role": user[3],
+            "created_at": user[4],
+        }
+        for user in users_raw
+    ]
+    return {"users": formatted_users}
 
 
 @router.put("/users/{user_id}/role")

@@ -13,6 +13,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { authService } from "../services/authService";
+import { UserManagement } from "./UserManagement";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
@@ -78,6 +79,11 @@ export const Dashboard = () => {
             isOpen={isUploadModalOpen}
             onClose={() => setIsUploadModalOpen(false)}
           />
+          {user?.role === "admin" && (
+            <div className="mt-8">
+              <UserManagement />
+            </div>
+          )}
         </div>
       </main>
     </div>

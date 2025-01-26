@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -132,6 +139,7 @@ const Register = () => {
     username: "",
     email: "",
     password: "",
+    role: "user",
     mfa_enabled: false,
   });
   const [error, setError] = useState("");
@@ -188,6 +196,21 @@ const Register = () => {
             setFormData((prev) => ({ ...prev, password: e.target.value }))
           }
         />
+        <Select
+          value={formData.role}
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, role: value }))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="user">User</SelectItem>
+            <SelectItem value="guest">Guest</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex items-center space-x-2 pt-4">
           <Checkbox
             id="mfa"
@@ -228,10 +251,10 @@ export const Auth = () => {
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
-          <TabsContent value="login" className="mt-6 h-[220px]">
+          <TabsContent value="login" className="mt-6 h-[270px]">
             <Login />
           </TabsContent>
-          <TabsContent value="register" className="mt-6 h-[220px]">
+          <TabsContent value="register" className="mt-6 h-[270px]">
             <Register />
           </TabsContent>
         </Tabs>
