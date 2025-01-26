@@ -37,7 +37,13 @@ export const FileList = () => {
     }
   };
 
-  const FileRow = ({ file }: { file: { id: number; filename: string } }) => (
+  const FileRow = ({
+    file,
+    isOwned,
+  }: {
+    file: { id: number; filename: string };
+    isOwned: boolean;
+  }) => (
     <div className="flex items-center justify-between p-4 border-b last:border-b-0">
       <span className="text-sm">{file.filename}</span>
       <div className="flex gap-2">
@@ -74,16 +80,18 @@ export const FileList = () => {
             >
               <Download className="h-4 w-4" />
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShareFileId(file.id);
-                setShareFileName(file.filename);
-              }}
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
+            {isOwned && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShareFileId(file.id);
+                  setShareFileName(file.filename);
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -108,7 +116,7 @@ export const FileList = () => {
         </CardHeader>
         <CardContent>
           {ownedFiles.map((file) => (
-            <FileRow key={file.id} file={file} />
+            <FileRow key={file.id} file={file} isOwned={true} />
           ))}
           {ownedFiles.length === 0 && (
             <p className="text-sm text-muted-foreground">
@@ -124,7 +132,7 @@ export const FileList = () => {
         </CardHeader>
         <CardContent>
           {sharedFiles.map((file) => (
-            <FileRow key={file.id} file={file} />
+            <FileRow key={file.id} file={file} isOwned={false} />
           ))}
           {sharedFiles.length === 0 && (
             <p className="text-sm text-muted-foreground">
