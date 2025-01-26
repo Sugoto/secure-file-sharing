@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { Lock, Download } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -7,6 +8,8 @@ import {
   CardHeader,
   CardContent,
   CardFooter,
+  CardDescription,
+  CardTitle,
 } from "../components/ui/card";
 import { fileService } from "../services/fileService";
 
@@ -30,7 +33,7 @@ export const SharedFilePage = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "shared-file"; // The actual filename will be set by the server
+      a.download = "shared-file";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -42,30 +45,49 @@ export const SharedFilePage = () => {
   };
 
   return (
-    <div className="container max-w-md mt-10">
-      <Card>
-        <CardHeader>
-          <h1 className="text-2xl font-bold">Access Shared File</h1>
+    <div className="min-h-screen w-full flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-2">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">
+            Access Shared File
+          </CardTitle>
+          <CardDescription className="text-center">
+            Enter the password to access the shared file
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter file password"
+              className="w-full"
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleDownload}
             disabled={isLoading}
             className="w-full"
+            variant="default"
           >
-            {isLoading ? "Accessing..." : "Access File"}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Accessing...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Submit
+              </span>
+            )}
           </Button>
         </CardFooter>
       </Card>

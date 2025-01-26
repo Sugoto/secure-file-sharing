@@ -40,9 +40,12 @@ class FileService {
   }
 
   async accessSharedFile(token: string, password: string): Promise<Blob> {
-    const response = await axiosInstance.get(`/api/files/shared/${token}?password=${password}`, {
-      responseType: 'blob'
-    });
+    const response = await axiosInstance.get(
+      `/files/shared/${token}?password=${password}`,
+      {
+        responseType: "blob",
+      }
+    );
     return response.data;
   }
 }
