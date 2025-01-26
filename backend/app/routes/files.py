@@ -1,14 +1,11 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Optional
-
-from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Form
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException
 from fastapi.responses import FileResponse, Response
-
 from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
-from app.models import FileShare, FileMetadata, ShareLinkCreate
+from app.models import FileShare
 import base64
 from cryptography.fernet import Fernet
 
