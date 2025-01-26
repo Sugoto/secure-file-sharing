@@ -8,7 +8,7 @@ import { Dashboard } from "./components/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuthStore } from "./store/authStore";
 import { Auth } from "./components/Auth";
-import { SharedFilePage } from "./pages/SharedFilePage";
+import { SharedFilePage } from "./components/SharedFilePage";
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

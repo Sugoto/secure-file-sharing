@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.services.database import execute_query, fetch_one, fetch_all
-from app.services.security import SecurityService, FileEncryptor, check_roles
+from app.services.security import SecurityService, check_roles
 import base64
 
 router = APIRouter(prefix="/files", tags=["File Management"])
@@ -20,7 +20,7 @@ os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 class FileShare(BaseModel):
     file_id: int
     shared_with_username: Optional[str] = None
-    permissions: str = "view"  # "view" or "download"
+    permissions: str = "view"
     expires_in_hours: Optional[int] = 24
 
 
@@ -52,15 +52,12 @@ async def upload_file(
     unique_filename = f"{uuid.uuid4()}_{file.filename}"
     file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
 
-    # Store the encrypted file
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
-    # Read IV and salt
     iv_bytes = await iv.read()
     salt_bytes = await salt.read()
 
-    # Store file metadata
     execute_query(
         """INSERT INTO files 
            (filename, user_id, file_path, iv, salt) 
@@ -239,12 +236,11 @@ async def download_file(
 
     filename, file_path, iv, salt = file
 
-    # Ensure proper base64 encoding without line breaks or whitespace
     headers = {
         "X-IV": base64.b64encode(iv).decode("utf-8").strip(),
         "X-Salt": base64.b64encode(salt).decode("utf-8").strip(),
         "Content-Disposition": f'attachment; filename="{filename}"',
-        "Access-Control-Expose-Headers": "X-IV, X-Salt",  # Important for CORS
+        "Access-Control-Expose-Headers": "X-IV, X-Salt",
     }
 
     return FileResponse(

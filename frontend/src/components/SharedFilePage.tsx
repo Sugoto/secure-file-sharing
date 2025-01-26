@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Lock, Download } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import {
   Card,
   CardHeader,
@@ -10,7 +10,7 @@ import {
   CardFooter,
   CardDescription,
   CardTitle,
-} from "../components/ui/card";
+} from "./ui/card";
 import { fileService } from "../services/fileService";
 
 export const SharedFilePage = () => {
