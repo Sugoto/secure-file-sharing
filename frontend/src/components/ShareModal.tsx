@@ -1,5 +1,16 @@
 import { useState } from "react";
 import { useFileStore } from "../store/fileStore";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./ui/dialog";
+import { TabsTrigger, TabsList, TabsContent, Tabs } from "./ui/tabs";
 
 interface ShareModalProps {
   fileId: number;
@@ -16,7 +27,7 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
 
   const handleShare = async () => {
     if (shareType === "user" && !username) return;
-    
+
     const { token } = await shareFile(
       fileId,
       shareType === "user" ? username : undefined,
@@ -31,83 +42,66 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg w-96">
-        <h3 className="text-lg font-semibold mb-4">Share {fileName}</h3>
-        
-        <div className="mb-4">
-          <label className="block mb-2">Share Type</label>
-          <div className="flex gap-4">
-            <button
-              className={`px-4 py-2 rounded ${
-                shareType === "user" ? "bg-blue-600 text-white" : "bg-gray-200"
-              }`}
-              onClick={() => setShareType("user")}
-            >
-              Share with User
-            </button>
-            <button
-              className={`px-4 py-2 rounded ${
-                shareType === "link" ? "bg-blue-600 text-white" : "bg-gray-200"
-              }`}
-              onClick={() => setShareType("link")}
-            >
-              Generate Link
-            </button>
-          </div>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Share {fileName}</DialogTitle>
+        </DialogHeader>
 
-        {shareType === "user" && (
-          <div className="mb-4">
-            <label className="block mb-2">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-              placeholder="Enter username"
-            />
-          </div>
-        )}
+        <Tabs
+          value={shareType}
+          onValueChange={(value: "user" | "link") => setShareType(value)}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="user">Share with User</TabsTrigger>
+            <TabsTrigger value="link">Generate Link</TabsTrigger>
+          </TabsList>
 
-        <div className="mb-4">
-          <label className="block mb-2">Expires In (hours)</label>
-          <input
+          <TabsContent value="user" className="mt-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter username"
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div className="space-y-2">
+          <Label htmlFor="expires">Expires In (hours)</Label>
+          <Input
+            id="expires"
             type="number"
             value={expiresIn}
             onChange={(e) => setExpiresIn(parseInt(e.target.value))}
-            className="w-full px-3 py-2 border rounded"
             min="1"
           />
         </div>
 
         {shareLink && (
-          <div className="mb-4">
-            <label className="block mb-2">Share Link</label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="shareLink">Share Link</Label>
+            <Input
+              id="shareLink"
               value={shareLink}
               readOnly
-              className="w-full px-3 py-2 border rounded bg-gray-50"
+              className="bg-muted"
             />
           </div>
         )}
 
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm bg-gray-200 rounded hover:bg-gray-300"
-          >
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            onClick={handleShare}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Share
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+          <Button onClick={handleShare}>Share</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
