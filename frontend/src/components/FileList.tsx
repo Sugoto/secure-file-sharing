@@ -10,7 +10,6 @@ import { Download, Share2, Trash2 } from "lucide-react";
 export const FileList = () => {
   const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =
     useFileStore();
-  const [downloadPassword, setDownloadPassword] = useState("");
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [shareFileId, setShareFileId] = useState<number | null>(null);
   const [shareFileName, setShareFileName] = useState("");
@@ -19,91 +18,93 @@ export const FileList = () => {
     fetchFiles();
   }, [fetchFiles]);
 
-  const handleDownload = async (fileId: number) => {
-    try {
-      const blob = await fileService.downloadFile(fileId, downloadPassword);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download =
-        ownedFiles.find((f) => f.id === fileId)?.filename || "download";
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      setDownloadPassword("");
-      setSelectedFileId(null);
-    } catch (err) {
-      console.error("Download failed:", err);
-    }
-  };
-
   const FileRow = ({
     file,
     isOwned,
   }: {
     file: { id: number; filename: string };
     isOwned: boolean;
-  }) => (
-    <div className="flex items-center justify-between p-4 border-b last:border-b-0">
-      <span className="text-sm">{file.filename}</span>
-      <div className="flex gap-2">
-        {selectedFileId === file.id ? (
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              value={downloadPassword}
-              onChange={(e) => setDownloadPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-40"
-            />
-            <Button
-              size="sm"
-              variant="default"
-              onClick={() => handleDownload(file.id)}
-            >
-              Confirm
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSelectedFileId(null)}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSelectedFileId(file.id)}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            {isOwned && (
+  }) => {
+    const [downloadPassword, setDownloadPassword] = useState("");
+
+    const handleLocalDownload = async () => {
+      try {
+        const blob = await fileService.downloadFile(file.id, downloadPassword);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setDownloadPassword("");
+        setSelectedFileId(null);
+      } catch (err) {
+        console.error("Download failed:", err);
+      }
+    };
+
+    return (
+      <div className="flex items-center justify-between p-4 border-b last:border-b-0">
+        <span className="text-sm">{file.filename}</span>
+        <div className="flex gap-2">
+          {selectedFileId === file.id ? (
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                value={downloadPassword}
+                onChange={(e) => setDownloadPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-40"
+              />
+              <Button size="sm" variant="default" onClick={handleLocalDownload}>
+                Confirm
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  setShareFileId(file.id);
-                  setShareFileName(file.filename);
+                  setSelectedFileId(null);
+                  setDownloadPassword("");
                 }}
               >
-                <Share2 className="h-4 w-4" />
+                Cancel
               </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => deleteFile(file.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </>
-        )}
+            </div>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedFileId(file.id)}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              {isOwned && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setShareFileId(file.id);
+                    setShareFileName(file.filename);
+                  }}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => deleteFile(file.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
