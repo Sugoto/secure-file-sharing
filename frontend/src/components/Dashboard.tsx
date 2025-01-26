@@ -11,11 +11,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { authService } from "../services/authService";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+
+  const handleMFAToggle = async () => {
+    try {
+      const response = await authService.toggleMFA();
+      setMfaEnabled(response.mfa_enabled);
+    } catch (error) {
+      console.error("Failed to toggle MFA:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,7 +46,18 @@ export const Dashboard = () => {
                     <span>{user?.username}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="p-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">
+                        Two-Factor Auth
+                      </label>
+                      <Switch
+                        checked={mfaEnabled}
+                        onCheckedChange={handleMFAToggle}
+                      />
+                    </div>
+                  </div>
                   <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

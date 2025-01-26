@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -20,11 +22,13 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showMFA, setShowMFA] = useState(false);
   const [mfaCode, setMFACode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const response = await authService.login({ username, password });
 
@@ -36,11 +40,14 @@ const Login = () => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleMFASubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const response = await authService.verifyMFA({
         username,
@@ -50,6 +57,8 @@ const Login = () => {
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "MFA verification failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,8 +82,15 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <Button type="submit" className="w-full">
-          Sign in
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Please wait
+            </>
+          ) : (
+            "Sign in"
+          )}
         </Button>
       </form>
 
@@ -92,9 +108,17 @@ const Login = () => {
               onChange={(e) => setMFACode(e.target.value)}
               pattern="\d{6}"
               maxLength={6}
+              disabled={isLoading}
             />
-            <Button type="submit" className="w-full">
-              Verify
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying
+                </>
+              ) : (
+                "Verify"
+              )}
             </Button>
           </form>
         </DialogContent>
@@ -108,13 +132,16 @@ const Register = () => {
     username: "",
     email: "",
     password: "",
+    mfa_enabled: false,
   });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       await authService.register(formData);
       const loginResponse = await authService.login({
@@ -125,6 +152,8 @@ const Register = () => {
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -160,8 +189,30 @@ const Register = () => {
           }
         />
       </div>
-      <Button type="submit" className="w-full">
-        Register
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="mfa"
+          checked={formData.mfa_enabled}
+          onCheckedChange={(checked) =>
+            setFormData((prev) => ({ ...prev, mfa_enabled: !!checked }))
+          }
+        />
+        <label
+          htmlFor="mfa"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Enable Two-Factor Authentication
+        </label>
+      </div>
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Registering
+          </>
+        ) : (
+          "Register"
+        )}
       </Button>
     </form>
   );

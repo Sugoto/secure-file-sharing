@@ -1,4 +1,10 @@
-import { UserCreate, UserLogin, AuthResponse, LoginResponse, MFAVerify } from "../types/auth";
+import {
+  UserCreate,
+  UserLogin,
+  AuthResponse,
+  LoginResponse,
+  MFAVerify,
+} from "../types/auth";
 import { axiosInstance } from "../config/axios";
 
 export const authService = {
@@ -24,5 +30,10 @@ export const authService = {
     } catch {
       return false;
     }
+  },
+
+  async toggleMFA(): Promise<{ mfa_enabled: boolean }> {
+    const { data } = await axiosInstance.post("/auth/toggle-mfa");
+    return data;
   },
 };
