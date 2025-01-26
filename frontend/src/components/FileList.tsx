@@ -5,7 +5,7 @@ import { ShareModal } from "./ShareModal";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Download, Share, Trash2 } from "lucide-react";
+import { Download, Share2, Trash2 } from "lucide-react";
 
 export const FileList = () => {
   const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =
@@ -82,7 +82,7 @@ export const FileList = () => {
                 setShareFileName(file.filename);
               }}
             >
-              <Share className="h-4 w-4" />
+              <Share2 className="h-4 w-4" />
             </Button>
             <Button
               size="sm"
