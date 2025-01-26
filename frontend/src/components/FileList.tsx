@@ -23,7 +23,7 @@ export const FileList = () => {
   const FileRow = ({
     file,
     isOwned,
-    permission
+    permission,
   }: {
     file: {
       id: number;
@@ -53,9 +53,9 @@ export const FileList = () => {
         window.URL.revokeObjectURL(url);
         setDownloadPassword("");
         setSelectedFileId(null);
-      } catch (error: unknown) {
+      } catch (error: any) {
         const errorMessage =
-          error instanceof Error ? error.message : "Invalid password";
+          error.response?.data?.detail || "An error occurred during download";
         setDownloadError(errorMessage);
         console.error("Download failed:", error);
       }
@@ -188,11 +188,11 @@ export const FileList = () => {
         </CardHeader>
         <CardContent>
           {sharedFiles.map((file) => (
-            <FileRow 
-              key={file.id} 
-              file={file} 
+            <FileRow
+              key={file.id}
+              file={file}
               isOwned={false}
-              permission={file.permission} 
+              permission={file.permission}
             />
           ))}
           {sharedFiles.length === 0 && (

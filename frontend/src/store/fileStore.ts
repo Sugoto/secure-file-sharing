@@ -13,6 +13,13 @@ interface FileStore {
   shareFile: (request: ShareRequest) => Promise<ShareResponse | undefined>;
 }
 
+interface ShareData {
+  file_id: number;
+  shared_with_username?: string;
+  permissions: "view" | "download";
+  expires_in_hours: number;
+}
+
 export const useFileStore = create<FileStore>((set) => ({
   ownedFiles: [],
   sharedFiles: [],
@@ -60,13 +67,14 @@ export const useFileStore = create<FileStore>((set) => ({
     }
   },
 
-  shareFile: async (request: ShareRequest) => {
+  shareFile: async (shareData: ShareData) => {
     try {
-      const response = await fileService.shareFile(request);
+      const response = await fileService.shareFile(shareData);
+      set({ error: null });
       return response;
     } catch (error) {
       set({ error: "Failed to share file" });
-      return undefined;
+      throw error;
     }
   },
 }));

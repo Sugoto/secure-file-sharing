@@ -11,6 +11,8 @@ import {
   DialogFooter,
 } from "./ui/dialog";
 import { TabsTrigger, TabsList, TabsContent, Tabs } from "./ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { EyeIcon, DownloadIcon } from "lucide-react";
 
 interface ShareModalProps {
   fileId: number;
@@ -29,12 +31,14 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
   const handleShare = async () => {
     if (shareType === "user" && !username) return;
 
-    const { token } = await shareFile(
-      fileId,
-      shareType === "user" ? username : undefined,
-      expiresIn,
-      permission
-    );
+    const shareData = {
+      file_id: fileId,
+      shared_with_username: shareType === "user" ? username : undefined,
+      permissions: permission,
+      expires_in_hours: expiresIn,
+    };
+
+    const { token } = await shareFile(shareData);
 
     if (shareType === "link" && token) {
       setShareLink(`${window.location.origin}/shared/${token}`);
@@ -72,18 +76,24 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="permission">Permission</Label>
-                <select
-                  id="permission"
+                <Label>Permission</Label>
+                <ToggleGroup
+                  type="single"
                   value={permission}
-                  onChange={(e) =>
-                    setPermission(e.target.value as "view" | "download")
+                  onValueChange={(value) =>
+                    setPermission(value as "view" | "download")
                   }
-                  className="w-full rounded-md border p-2"
+                  className="justify-start"
                 >
-                  <option value="view">View Only</option>
-                  <option value="download">Download</option>
-                </select>
+                  <ToggleGroupItem value="view" aria-label="View only">
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    View
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="download" aria-label="Download">
+                    <DownloadIcon className="h-4 w-4 mr-2" />
+                    Download
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
             </div>
           </TabsContent>

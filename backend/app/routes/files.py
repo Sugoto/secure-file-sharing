@@ -247,7 +247,10 @@ def download_file(
                 raise HTTPException(status_code=400, detail="Password is required")
             derived_key, _ = FileEncryptor.generate_key(password, salt)
 
-        decrypted_path = FileEncryptor.decrypt_file(file[3], derived_key)
+        try:
+            decrypted_path = FileEncryptor.decrypt_file(file[3], derived_key)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Incorrect password for file")
 
         def cleanup(decrypted_path=decrypted_path):
             try:
@@ -261,9 +264,12 @@ def download_file(
             background=cleanup,
             media_type="application/octet-stream",
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
-            status_code=400, detail="Decryption failed. Check your password."
+            status_code=500,
+            detail="An unexpected error occurred while processing your request",
         )
 
 
