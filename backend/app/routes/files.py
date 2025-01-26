@@ -231,7 +231,9 @@ async def download_file(
 
         file = file_and_permission[:-1]
 
-    file = fetch_one("SELECT filename, file_path, iv, salt FROM files WHERE id = ?", (file_id,))
+    file = fetch_one(
+        "SELECT filename, file_path, iv, salt FROM files WHERE id = ?", (file_id,)
+    )
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
 
@@ -239,16 +241,14 @@ async def download_file(
 
     # Ensure proper base64 encoding without line breaks or whitespace
     headers = {
-        "X-IV": base64.b64encode(iv).decode('utf-8').strip(),
-        "X-Salt": base64.b64encode(salt).decode('utf-8').strip(),
+        "X-IV": base64.b64encode(iv).decode("utf-8").strip(),
+        "X-Salt": base64.b64encode(salt).decode("utf-8").strip(),
         "Content-Disposition": f'attachment; filename="{filename}"',
-        "Access-Control-Expose-Headers": "X-IV, X-Salt"  # Important for CORS
+        "Access-Control-Expose-Headers": "X-IV, X-Salt",  # Important for CORS
     }
 
     return FileResponse(
-        file_path,
-        headers=headers,
-        media_type="application/octet-stream"
+        file_path, headers=headers, media_type="application/octet-stream"
     )
 
 
@@ -291,7 +291,8 @@ async def delete_file(
 def access_shared_file(token: str, password: str):
     file_data = fetch_one(
         """
-        SELECT f.* FROM files f
+        SELECT f.filename, f.file_path, f.iv, f.salt 
+        FROM files f
         JOIN file_shares fs ON f.id = fs.file_id
         WHERE fs.token = ? AND fs.expires_at > CURRENT_TIMESTAMP
         """,
@@ -301,29 +302,18 @@ def access_shared_file(token: str, password: str):
     if not file_data:
         raise HTTPException(status_code=404, detail="Invalid or expired share link")
 
-    try:
-        stored_key = base64.urlsafe_b64decode(file_data[4])
-        salt = base64.urlsafe_b64decode(file_data[5])
+    filename, file_path, iv, salt = file_data
 
-        derived_key, _ = FileEncryptor.generate_key(password, salt)
-        decrypted_path = FileEncryptor.decrypt_file(file_data[3], derived_key)
+    headers = {
+        "X-IV": base64.b64encode(iv).decode("utf-8").strip(),
+        "X-Salt": base64.b64encode(salt).decode("utf-8").strip(),
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Access-Control-Expose-Headers": "X-IV, X-Salt, Content-Disposition",
+    }
 
-        def cleanup(decrypted_path=decrypted_path):
-            try:
-                os.remove(decrypted_path)
-            except:
-                pass
-
-        return FileResponse(
-            decrypted_path,
-            filename=file_data[1],
-            background=cleanup,
-            media_type="application/octet-stream",
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=400, detail="Decryption failed. Check your password."
-        )
+    return FileResponse(
+        file_path, headers=headers, media_type="application/octet-stream"
+    )
 
 
 @router.delete("/revoke-share/{share_id}")

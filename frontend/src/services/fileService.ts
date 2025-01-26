@@ -149,14 +149,44 @@ class FileService {
     return response.data;
   }
 
-  async accessSharedFile(token: string, password: string): Promise<Blob> {
+  async accessSharedFile(token: string, password: string): Promise<File> {
     const response = await axiosInstance.get(
       `/files/shared/${token}?password=${password}`,
       {
         responseType: "blob",
       }
     );
-    return response.data;
+
+    const base64ToArrayBuffer = (base64: string) => {
+      const cleanBase64 = base64.replace(/[^A-Za-z0-9+/]/g, "");
+      const paddedBase64 = cleanBase64.padEnd(
+        cleanBase64.length + ((4 - (cleanBase64.length % 4)) % 4),
+        "="
+      );
+
+      const binaryString = atob(paddedBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    };
+
+    const iv = base64ToArrayBuffer(response.headers["x-iv"]);
+    const salt = base64ToArrayBuffer(response.headers["x-salt"]);
+    const fileName =
+      response.headers["content-disposition"]
+        ?.split("filename=")[1]
+        ?.replace(/"/g, "") || "shared-file";
+
+    const [key] = await FileEncryption.generateKey(password, salt);
+    const decryptedFile = await FileEncryption.decryptFile(
+      response.data,
+      key,
+      iv,
+      fileName
+    );
+    return decryptedFile;
   }
 }
 

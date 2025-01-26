@@ -29,13 +29,17 @@ export const SharedFilePage = () => {
     setError("");
 
     try {
-      const blob = await fileService.accessSharedFile(token!, password);
-      const url = window.URL.createObjectURL(blob);
+      const decryptedFile = await fileService.accessSharedFile(
+        token!,
+        password
+      );
+      const url = window.URL.createObjectURL(decryptedFile);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "shared-file";
+      a.download = decryptedFile.name;
       document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
       setError(error.response?.data?.detail || "Failed to access file");
