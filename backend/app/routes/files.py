@@ -20,7 +20,7 @@ os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 class FileShare(BaseModel):
     file_id: int
     shared_with_username: Optional[str] = None
-    permissions: str = "view"
+    permissions: str = "view"  # "view" or "download"
     expires_in_hours: Optional[int] = 24
 
 
@@ -178,7 +178,7 @@ def list_user_files(current_user: dict = Depends(SecurityService.get_current_use
 
         shared_files_raw = fetch_all(
             """
-            SELECT f.id, f.filename, f.file_path, f.user_id
+            SELECT f.id, f.filename, f.file_path, f.user_id, fs.permissions
             FROM files f
             JOIN file_shares fs ON f.id = fs.file_id
             WHERE fs.shared_with = ? AND fs.expires_at > CURRENT_TIMESTAMP
@@ -191,6 +191,7 @@ def list_user_files(current_user: dict = Depends(SecurityService.get_current_use
                 "filename": file[1],
                 "file_path": file[2],
                 "user_id": file[3],
+                "permission": file[4],
             }
             for file in shared_files_raw
         ]
@@ -216,17 +217,24 @@ def download_file(
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
     else:
-        file = fetch_one(
+        file_and_permission = fetch_one(
             """
-            SELECT * FROM files 
-            WHERE id = ? AND 
-            (user_id = ? OR 
-             id IN (SELECT file_id FROM file_shares WHERE shared_with = ? AND expires_at > CURRENT_TIMESTAMP))
+            SELECT f.*, fs.permissions FROM files f
+            LEFT JOIN file_shares fs ON f.id = fs.file_id AND fs.shared_with = ?
+            WHERE f.id = ? AND 
+            (f.user_id = ? OR 
+             (fs.file_id IS NOT NULL AND fs.expires_at > CURRENT_TIMESTAMP))
             """,
-            (file_id, user_id, user_id),
+            (user_id, file_id, user_id),
         )
-        if not file:
+
+        if not file_and_permission:
             raise HTTPException(status_code=403, detail="Access denied")
+
+        if file_and_permission[-1] == "view":
+            raise HTTPException(status_code=403, detail="Download not permitted")
+
+        file = file_and_permission[:-1]
 
     try:
         stored_key = base64.urlsafe_b64decode(file[4])

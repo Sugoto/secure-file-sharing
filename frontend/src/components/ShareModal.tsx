@@ -23,6 +23,7 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
   const [expiresIn, setExpiresIn] = useState(24);
   const [shareType, setShareType] = useState<"user" | "link">("user");
   const [shareLink, setShareLink] = useState("");
+  const [permission, setPermission] = useState<"view" | "download">("view");
   const { shareFile } = useFileStore();
 
   const handleShare = async () => {
@@ -31,7 +32,8 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
     const { token } = await shareFile(
       fileId,
       shareType === "user" ? username : undefined,
-      expiresIn
+      expiresIn,
+      permission
     );
 
     if (shareType === "link" && token) {
@@ -68,6 +70,20 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="permission">Permission</Label>
+                <select
+                  id="permission"
+                  value={permission}
+                  onChange={(e) =>
+                    setPermission(e.target.value as "view" | "download")
+                  }
+                  className="w-full rounded-md border p-2"
+                >
+                  <option value="view">View Only</option>
+                  <option value="download">Download</option>
+                </select>
               </div>
             </div>
           </TabsContent>

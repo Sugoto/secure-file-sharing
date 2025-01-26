@@ -27,6 +27,7 @@ export interface FileListResponse {
 export interface FileShareRequest {
   file_id: number;
   shared_with_username?: string;
+  permissions: "view" | "download";
   expires_in_hours?: number;
 }
 

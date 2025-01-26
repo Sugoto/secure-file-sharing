@@ -23,6 +23,7 @@ export const FileList = () => {
   const FileRow = ({
     file,
     isOwned,
+    permission
   }: {
     file: {
       id: number;
@@ -32,6 +33,7 @@ export const FileList = () => {
       owner_username?: string;
     };
     isOwned: boolean;
+    permission?: "view" | "download";
   }) => {
     const [downloadPassword, setDownloadPassword] = useState("");
     const [downloadError, setDownloadError] = useState("");
@@ -120,15 +122,17 @@ export const FileList = () => {
             </div>
           ) : (
             <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  isAdmin ? handleAdminDownload() : setSelectedFileId(file.id)
-                }
-              >
-                <Download className="h-4 w-4" />
-              </Button>
+              {(!permission || permission === "download") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    isAdmin ? handleAdminDownload() : setSelectedFileId(file.id)
+                  }
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
               {isOwned && (
                 <Button
                   size="sm"
@@ -184,7 +188,12 @@ export const FileList = () => {
         </CardHeader>
         <CardContent>
           {sharedFiles.map((file) => (
-            <FileRow key={file.id} file={file} isOwned={false} />
+            <FileRow 
+              key={file.id} 
+              file={file} 
+              isOwned={false}
+              permission={file.permission} 
+            />
           ))}
           {sharedFiles.length === 0 && (
             <p className="text-sm text-muted-foreground">
