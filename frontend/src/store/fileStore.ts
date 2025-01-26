@@ -1,22 +1,28 @@
 import { create } from "zustand";
 import { fileService } from "../services/fileService";
-import { FileData, FileInfo } from "../types/file";
+
+interface File {
+  id: number;
+  filename: string;
+  file_path: string;
+  user_id: number;
+  owner_username?: string;
+}
 
 interface FileStore {
-  ownedFiles: FileInfo[];
-  sharedFiles: FileInfo[];
+  ownedFiles: File[];
+  sharedFiles: File[];
   isLoading: boolean;
   error: string | null;
   fetchFiles: () => Promise<void>;
-  deleteFile: (fileId: number) => Promise<void>;
+  deleteFile: (id: number) => Promise<void>;
   uploadFile: (file: File, password: string) => Promise<void>;
-  shareFile: (fileId: number, username?: string, expiresIn?: number) => Promise<{token?: string}>;
+  shareFile: (
+    fileId: number,
+    username?: string,
+    expiresIn?: number
+  ) => Promise<{ token?: string }>;
 }
-
-const mapFileDataToInfo = (fileData: FileData): FileInfo => ({
-  id: fileData[0],
-  filename: fileData[1],
-});
 
 export const useFileStore = create<FileStore>((set) => ({
   ownedFiles: [],
@@ -28,20 +34,20 @@ export const useFileStore = create<FileStore>((set) => ({
     try {
       const response = await fileService.listFiles();
       set({
-        ownedFiles: response.owned_files.map(mapFileDataToInfo),
-        sharedFiles: response.shared_files.map(mapFileDataToInfo),
+        ownedFiles: response.owned_files || [],
+        sharedFiles: response.shared_files || [],
         isLoading: false,
       });
     } catch (error) {
       set({ error: "Failed to fetch files", isLoading: false });
     }
   },
-  deleteFile: async (fileId: number) => {
+  deleteFile: async (id: number) => {
     try {
-      await fileService.deleteFile(fileId);
+      await fileService.deleteFile(id);
       set((state) => ({
-        ownedFiles: state.ownedFiles.filter((file) => file.id !== fileId),
-        sharedFiles: state.sharedFiles.filter((file) => file.id !== fileId),
+        ownedFiles: state.ownedFiles.filter((file) => file.id !== id),
+        sharedFiles: state.sharedFiles.filter((file) => file.id !== id),
       }));
     } catch (error) {
       set({ error: "Failed to delete file" });
@@ -61,12 +67,16 @@ export const useFileStore = create<FileStore>((set) => ({
       set({ error: "Failed to upload file", isLoading: false });
     }
   },
-  shareFile: async (fileId: number, username?: string, expiresIn: number = 24) => {
+  shareFile: async (
+    fileId: number,
+    username?: string,
+    expiresIn: number = 24
+  ) => {
     try {
       const response = await fileService.shareFile({
         file_id: fileId,
         shared_with_username: username,
-        expires_in_hours: expiresIn
+        expires_in_hours: expiresIn,
       });
       return { token: response.share_token };
     } catch (error) {

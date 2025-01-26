@@ -143,18 +143,57 @@ def list_user_files(current_user: dict = Depends(SecurityService.get_current_use
     user_id, user_role = user[0], user[1]
 
     if user_role == "admin":
-        owned_files = fetch_all("SELECT * FROM files")
+        owned_files_raw = fetch_all(
+            """
+            SELECT f.id, f.filename, f.file_path, f.user_id, u.username as owner_username 
+            FROM files f 
+            JOIN users u ON f.user_id = u.id
+        """
+        )
+        owned_files = [
+            {
+                "id": file[0],
+                "filename": file[1],
+                "file_path": file[2],
+                "user_id": file[3],
+                "owner_username": file[4],
+            }
+            for file in owned_files_raw
+        ]
         shared_files = []
     else:
-        owned_files = fetch_all("SELECT * FROM files WHERE user_id = ?", (user_id,))
-        shared_files = fetch_all(
+        owned_files_raw = fetch_all(
+            "SELECT id, filename, file_path, user_id FROM files WHERE user_id = ?",
+            (user_id,),
+        )
+        owned_files = [
+            {
+                "id": file[0],
+                "filename": file[1],
+                "file_path": file[2],
+                "user_id": file[3],
+            }
+            for file in owned_files_raw
+        ]
+
+        shared_files_raw = fetch_all(
             """
-            SELECT f.* FROM files f
+            SELECT f.id, f.filename, f.file_path, f.user_id
+            FROM files f
             JOIN file_shares fs ON f.id = fs.file_id
             WHERE fs.shared_with = ? AND fs.expires_at > CURRENT_TIMESTAMP
             """,
             (user_id,),
         )
+        shared_files = [
+            {
+                "id": file[0],
+                "filename": file[1],
+                "file_path": file[2],
+                "user_id": file[3],
+            }
+            for file in shared_files_raw
+        ]
 
     return {"owned_files": owned_files, "shared_files": shared_files}
 

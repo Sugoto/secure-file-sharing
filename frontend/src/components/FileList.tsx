@@ -22,10 +22,18 @@ export const FileList = () => {
     file,
     isOwned,
   }: {
-    file: { id: number; filename: string };
+    file: {
+      id: number;
+      filename: string;
+      file_path: string;
+      user_id: number;
+      owner_username?: string;
+    };
     isOwned: boolean;
   }) => {
     const [downloadPassword, setDownloadPassword] = useState("");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const isAdmin = currentUser.role === "admin";
 
     const handleLocalDownload = async () => {
       try {
@@ -46,7 +54,14 @@ export const FileList = () => {
 
     return (
       <div className="flex items-center justify-between p-4 border-b last:border-b-0">
-        <span className="text-sm">{file.filename}</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm">{file.filename}</span>
+          {isAdmin && file.owner_username && (
+            <span className="text-xs text-muted-foreground">
+              Owned by {file.owner_username}
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
           {selectedFileId === file.id ? (
             <div className="flex gap-2">
