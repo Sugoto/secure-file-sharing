@@ -69,7 +69,7 @@ export const Dashboard = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold">Files</h2>
+            <h2 className="text-2xl font-bold">Files</h2>
             <Button onClick={() => setIsUploadModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Upload File
             </Button>

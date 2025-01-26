@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { authService } from "../services/authService";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface User {
   id: number;
@@ -62,45 +63,49 @@ export const UserManagement = () => {
 
   return (
     <div className="container mx-auto py-10">
-      <h2 className="text-2xl font-bold mb-4">Users</h2>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Username</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.username}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.role}</TableCell>
-              <TableCell>
-                {new Date(user.created_at).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                <Select
-                  value={user.role}
-                  onValueChange={(value) => handleRoleChange(user.id, value)}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="guest">Guest</SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <h2 className="text-2xl font-semibold mb-4">Users</h2>
+      <Card>
+        <CardContent className="overflow-x-auto max-h-80 mt-5">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Username</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Created At</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Select
+                      value={user.role}
+                      onValueChange={(value) =>
+                        handleRoleChange(user.id, value)
+                      }
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="guest">Guest</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
