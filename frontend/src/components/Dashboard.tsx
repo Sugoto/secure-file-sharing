@@ -100,15 +100,19 @@ export const Dashboard = () => {
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Files</h2>
-            <Button onClick={() => setIsUploadModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Upload File
-            </Button>
+            {user?.role !== 'guest' && (
+              <Button onClick={() => setIsUploadModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Upload File
+              </Button>
+            )}
           </div>
           <FileList />
-          <FileUploadModal
-            isOpen={isUploadModalOpen}
-            onClose={() => setIsUploadModalOpen(false)}
-          />
+          {user?.role !== 'guest' && (
+            <FileUploadModal
+              isOpen={isUploadModalOpen}
+              onClose={() => setIsUploadModalOpen(false)}
+            />
+          )}
           {user?.role === "admin" && (
             <div className="mt-8">
               <UserManagement />

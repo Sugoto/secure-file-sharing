@@ -13,6 +13,8 @@ export const FileList = () => {
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [shareFileId, setShareFileId] = useState<number | null>(null);
   const [shareFileName, setShareFileName] = useState("");
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isGuest = currentUser.role === "guest";
 
   useEffect(() => {
     fetchFiles();
@@ -126,21 +128,23 @@ export const FileList = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Files</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {ownedFiles.map((file) => (
-            <FileRow key={file.id} file={file} isOwned={true} />
-          ))}
-          {ownedFiles.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No files uploaded yet
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      {!isGuest && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Files</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ownedFiles.map((file) => (
+              <FileRow key={file.id} file={file} isOwned={true} />
+            ))}
+            {ownedFiles.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No files uploaded yet
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
