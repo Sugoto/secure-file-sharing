@@ -119,17 +119,17 @@ const Register = () => {
 export const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-6">
+      <Card className="w-full max-w-md p-6 h-[400px]">
         <Title />
-        <Tabs defaultValue="login" className="mt-6">
+        <Tabs defaultValue="login" className="mt-6 h-[calc(100%-80px)]">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
-          <TabsContent value="login">
+          <TabsContent value="login" className="mt-6">
             <Login />
           </TabsContent>
-          <TabsContent value="register">
+          <TabsContent value="register" className="mt-6">
             <Register />
           </TabsContent>
         </Tabs>
