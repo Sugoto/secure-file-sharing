@@ -27,6 +27,10 @@ class MFAVerify(BaseModel):
     code: str
 
 
+class UserRoleUpdate(BaseModel):
+    role: str
+
+
 @router.post("/register")
 def register_user(user: UserCreate):
     existing_user = fetch_one(

@@ -51,9 +51,7 @@ export const authService = {
   },
 
   async updateUserRole(userId: number, newRole: string): Promise<void> {
-    await axiosInstance.put(`/auth/users/${userId}/role`, {
-      new_role: newRole,
-    });
+    await axiosInstance.put(`/auth/users/${userId}/role?new_role=${newRole}`);
   },
 
   async deleteAccount(): Promise<void> {
