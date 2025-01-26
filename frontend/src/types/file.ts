@@ -8,14 +8,30 @@ export type FileData = [
   string // created_at
 ];
 
-export interface FileListResponse {
-  owned_files: FileData[];
-  shared_files: FileData[];
+export interface File {
+  id: number;
+  filename: string;
+  file_path: string;
+  user_id: number;
+  encryption_key: string;
+  iv: string;
+  created_at: string;
+  owner_username?: string;
 }
 
-export interface FileShareRequest {
-  fileId: number;
-  recipientUsername: string;
+export interface FileListResponse {
+  owned_files: File[];
+  shared_files: File[];
+}
+
+export interface ShareRequest {
+  file_id: number;
+  shared_with_username?: string;
+  expires_in_hours?: number;
+}
+
+export interface ShareResponse {
+  share_token: string;
 }
 
 export interface FileInfo {
