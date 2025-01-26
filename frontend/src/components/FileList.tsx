@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useFileStore } from "../store/fileStore";
 import { fileService } from "../services/fileService";
 import { ShareModal } from "./ShareModal";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Download, Share, Trash2 } from "lucide-react";
 
 export const FileList = () => {
   const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =
@@ -34,54 +38,59 @@ export const FileList = () => {
   };
 
   const FileRow = ({ file }: { file: { id: number; filename: string } }) => (
-    <div className="flex items-center justify-between p-4 border-b">
-      <span>{file.filename}</span>
+    <div className="flex items-center justify-between p-4 border-b last:border-b-0">
+      <span className="text-sm">{file.filename}</span>
       <div className="flex gap-2">
         {selectedFileId === file.id ? (
           <div className="flex gap-2">
-            <input
+            <Input
               type="password"
               value={downloadPassword}
               onChange={(e) => setDownloadPassword(e.target.value)}
               placeholder="Enter password"
-              className="px-2 py-1 border rounded"
+              className="w-40"
             />
-            <button
+            <Button
+              size="sm"
+              variant="default"
               onClick={() => handleDownload(file.id)}
-              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
             >
               Confirm
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setSelectedFileId(null)}
-              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         ) : (
           <>
-            <button
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setSelectedFileId(file.id)}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Download
-            </button>
-            <button
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => {
                 setShareFileId(file.id);
                 setShareFileName(file.filename);
               }}
-              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
             >
-              Share
-            </button>
-            <button
+              <Share className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => deleteFile(file.id)}
-              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
             >
-              Delete
-            </button>
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </>
         )}
       </div>
@@ -93,29 +102,37 @@ export const FileList = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Your Files</h2>
-        <div className="border rounded-lg overflow-hidden">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Files</CardTitle>
+        </CardHeader>
+        <CardContent>
           {ownedFiles.map((file) => (
             <FileRow key={file.id} file={file} />
           ))}
           {ownedFiles.length === 0 && (
-            <p className="p-4 text-gray-500">No files uploaded yet</p>
+            <p className="text-sm text-muted-foreground">
+              No files uploaded yet
+            </p>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Shared With You</h2>
-        <div className="border rounded-lg overflow-hidden">
+      <Card>
+        <CardHeader>
+          <CardTitle>Shared With You</CardTitle>
+        </CardHeader>
+        <CardContent>
           {sharedFiles.map((file) => (
             <FileRow key={file.id} file={file} />
           ))}
           {sharedFiles.length === 0 && (
-            <p className="p-4 text-gray-500">No files shared with you</p>
+            <p className="text-sm text-muted-foreground">
+              No files shared with you
+            </p>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {shareFileId && (
         <ShareModal
