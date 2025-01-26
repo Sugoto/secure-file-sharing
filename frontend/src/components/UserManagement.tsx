@@ -110,7 +110,7 @@ export const UserManagement = () => {
                         handleRoleChange(user.id, value)
                       }
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[100px]">
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>

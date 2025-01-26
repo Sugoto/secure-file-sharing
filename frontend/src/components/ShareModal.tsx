@@ -50,7 +50,9 @@ export const ShareModal = ({ fileId, fileName, onClose }: ShareModalProps) => {
       const response = await shareFile(shareData);
 
       if (shareType === "link" && response?.share_token) {
-        setShareLink(`${window.location.origin}/shared/${response.share_token}`);
+        setShareLink(
+          `${window.location.origin}/shared/${response.share_token}`
+        );
       } else if (shareType === "user") {
         onClose();
       }
