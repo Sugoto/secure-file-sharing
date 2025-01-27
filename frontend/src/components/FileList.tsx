@@ -147,14 +147,16 @@ export const FileList = () => {
             <CardTitle>Your Files</CardTitle>
           </CardHeader>
           <CardContent>
-            {ownedFiles.map((file) => (
-              <FileRow key={file.id} file={file} isOwned={true} />
-            ))}
-            {ownedFiles.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No files uploaded yet
-              </p>
-            )}
+            <div className="max-h-[300px] overflow-y-auto">
+              {ownedFiles.map((file) => (
+                <FileRow key={file.id} file={file} isOwned={true} />
+              ))}
+              {ownedFiles.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No files uploaded yet
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -164,19 +166,21 @@ export const FileList = () => {
           <CardTitle>Shared With You</CardTitle>
         </CardHeader>
         <CardContent>
-          {sharedFiles.map((file) => (
-            <FileRow
-              key={file.id}
-              file={file}
-              isOwned={false}
-              permission={file.permission}
-            />
-          ))}
-          {sharedFiles.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No files shared with you
-            </p>
-          )}
+          <div className="max-h-[300px] overflow-y-auto">
+            {sharedFiles.map((file) => (
+              <FileRow
+                key={file.id}
+                file={file}
+                isOwned={false}
+                permission={file.permission}
+              />
+            ))}
+            {sharedFiles.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No files shared with you
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
