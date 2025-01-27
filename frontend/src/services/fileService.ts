@@ -1,5 +1,10 @@
 import { axiosInstance } from "../config/axios";
 import { FileListResponse, FileShareRequest } from "../types/file";
+import {
+  sanitizeFileName,
+  sanitizePassword,
+  sanitizeInput,
+} from "../utils/sanitization";
 
 /**
  * Converts a base64 string to Uint8Array
@@ -119,11 +124,14 @@ class FileEncryption {
  */
 class FileService {
   async uploadFile(file: File, password: string) {
-    const [key, salt] = await FileEncryption.generateKey(password);
+    const sanitizedFileName = sanitizeFileName(file.name);
+    const sanitizedPassword = sanitizePassword(password);
+
+    const [key, salt] = await FileEncryption.generateKey(sanitizedPassword);
     const { encryptedFile, iv } = await FileEncryption.encryptFile(file, key);
 
     const formData = new FormData();
-    formData.append("file", encryptedFile, file.name);
+    formData.append("file", encryptedFile, sanitizedFileName);
     formData.append("iv", new Blob([iv]));
     formData.append("salt", new Blob([salt]));
 
@@ -170,15 +178,25 @@ class FileService {
     password: string,
     fileName: string
   ): Promise<File> {
+    const sanitizedPassword = sanitizePassword(password);
+    const sanitizedFileName = sanitizeFileName(fileName);
+
     const response = await axiosInstance.get(`/files/download/${fileId}`, {
       responseType: "blob",
     });
-    return this.decryptFileResponse(response, password, fileName);
+    return this.decryptFileResponse(
+      response,
+      sanitizedPassword,
+      sanitizedFileName
+    );
   }
 
   async accessSharedFile(token: string, password: string): Promise<File> {
+    const sanitizedPassword = sanitizePassword(password);
+    const sanitizedToken = sanitizeInput(token);
+
     const response = await axiosInstance.get(
-      `/files/shared/${token}?password=${password}`,
+      `/files/shared/${sanitizedToken}?password=${sanitizedPassword}`,
       { responseType: "blob" }
     );
 
@@ -187,7 +205,7 @@ class FileService {
         ?.split("filename=")[1]
         ?.replace(/"/g, "") || "shared-file";
 
-    return this.decryptFileResponse(response, password, fileName);
+    return this.decryptFileResponse(response, sanitizedPassword, fileName);
   }
 }
 

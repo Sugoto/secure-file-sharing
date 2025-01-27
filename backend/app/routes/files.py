@@ -8,6 +8,7 @@ from app.services.security import SecurityService, check_roles
 from app.models import FileShare
 import base64
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from app.utils.sanitization import sanitize_filename, sanitize_input, sanitize_token
 
 router = APIRouter(prefix="/files", tags=["File Management"])
 
@@ -38,6 +39,7 @@ async def upload_file(
     salt: UploadFile = File(...),
     current_user: dict = Depends(SecurityService.get_current_user),
 ):
+    file.filename = sanitize_filename(file.filename)
     user = fetch_one("SELECT id FROM users WHERE username = ?", (current_user["sub"],))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -84,6 +86,10 @@ def share_file(
     share_details: FileShare,
     current_user: dict = Depends(SecurityService.get_current_user),
 ):
+    if share_details.shared_with_username:
+        share_details.shared_with_username = sanitize_input(
+            share_details.shared_with_username
+        )
     file = fetch_one("SELECT * FROM files WHERE id = ?", (share_details.file_id,))
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
@@ -295,6 +301,9 @@ async def delete_file(
 
 @router.get("/shared/{token}")
 def access_shared_file(token: str, password: str):
+    sanitized_token = sanitize_token(token)
+    sanitized_password = sanitize_input(password)
+
     file_data = fetch_one(
         """
         SELECT f.filename, f.file_path, f.iv, f.salt 
@@ -302,7 +311,7 @@ def access_shared_file(token: str, password: str):
         JOIN file_shares fs ON f.id = fs.file_id
         WHERE fs.token = ? AND fs.expires_at > CURRENT_TIMESTAMP
         """,
-        (token,),
+        (sanitized_token,),
     )
 
     if not file_data:
