@@ -1,11 +1,10 @@
 import { useAuthStore } from "../store/authStore";
-import { FileList } from "./FileList";
-import { FileUploadModal } from "./FileUploadModal";
+import { FileManagement } from "./FileManagement";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { useState } from "react";
-import { Plus, User, Info } from "lucide-react";
+import { User, Info } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +29,6 @@ import { Alert, AlertDescription } from "./ui/alert";
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -108,21 +106,7 @@ export const Dashboard = () => {
       </div>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Files</h2>
-            {user?.role !== "guest" && (
-              <Button onClick={() => setIsUploadModalOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Upload File
-              </Button>
-            )}
-          </div>
-          <FileList />
-          {user?.role !== "guest" && (
-            <FileUploadModal
-              isOpen={isUploadModalOpen}
-              onClose={() => setIsUploadModalOpen(false)}
-            />
-          )}
+          <FileManagement />
           {user?.role === "admin" && (
             <div className="mt-8">
               <UserManagement />

@@ -5,14 +5,16 @@ import { ShareModal } from "./ShareModal";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Download, Share2, Trash2 } from "lucide-react";
+import { Download, Share2, Trash2, Plus } from "lucide-react";
+import { FileUploadModal } from "./FileUploadModal";
 
-export const FileList = () => {
+export const FileManagement = () => {
   const { ownedFiles, sharedFiles, fetchFiles, deleteFile, isLoading, error } =
     useFileStore();
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [shareFileId, setShareFileId] = useState<number | null>(null);
   const [shareFileName, setShareFileName] = useState("");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isGuest = currentUser.role === "guest";
 
@@ -141,6 +143,15 @@ export const FileList = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Files</h2>
+        {!isGuest && (
+          <Button onClick={() => setIsUploadModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Upload File
+          </Button>
+        )}
+      </div>
+
       {!isGuest && (
         <Card>
           <CardHeader>
@@ -189,6 +200,13 @@ export const FileList = () => {
           fileId={shareFileId}
           fileName={shareFileName}
           onClose={() => setShareFileId(null)}
+        />
+      )}
+
+      {!isGuest && (
+        <FileUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
         />
       )}
     </div>

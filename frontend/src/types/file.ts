@@ -17,6 +17,7 @@ export interface File {
   iv: string;
   created_at: string;
   owner_username?: string;
+  permission?: "view" | "download";
 }
 
 export interface FileListResponse {
