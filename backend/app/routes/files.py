@@ -7,17 +7,27 @@ from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
 from app.models import FileShare
 import base64
-from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 router = APIRouter(prefix="/files", tags=["File Management"])
 
 UPLOAD_DIRECTORY = "uploads"
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
-SERVER_KEY = (
-    Fernet.generate_key() if not os.getenv("SERVER_KEY") else os.getenv("SERVER_KEY")
-)
-fernet = Fernet(SERVER_KEY)
+SERVER_KEY = os.getenv("SERVER_KEY", os.urandom(32))
+
+
+def encrypt_file(data: bytes, iv: bytes) -> bytes:
+    if len(iv) != 12:
+        raise ValueError("IV must be 12 bytes long for AES GCM mode")
+
+    aesgcm = AESGCM(SERVER_KEY)
+    return aesgcm.encrypt(iv, data, None)
+
+
+def decrypt_file(encrypted_data: bytes, iv: bytes) -> bytes:
+    aesgcm = AESGCM(SERVER_KEY)
+    return aesgcm.decrypt(iv, encrypted_data, None)
 
 
 @router.post("/upload")
@@ -36,12 +46,20 @@ async def upload_file(
     unique_filename = f"{uuid.uuid4()}_{file.filename}"
     file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
 
+    iv_bytes = await iv.read()
+    if len(iv_bytes) != 12:
+        raise HTTPException(
+            status_code=400, detail="Invalid IV size. Must be 12 bytes for AES GCM mode"
+        )
+
     with open(file_path, "wb") as buffer:
         content = await file.read()
-        encrypted_content = fernet.encrypt(content)
-        buffer.write(encrypted_content)
+        try:
+            encrypted_content = encrypt_file(content, iv_bytes)
+            buffer.write(encrypted_content)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
-    iv_bytes = await iv.read()
     salt_bytes = await salt.read()
 
     execute_query(
@@ -231,7 +249,7 @@ async def download_file(
 
     with open(file_path, "rb") as f:
         encrypted_content = f.read()
-        decrypted_content = fernet.decrypt(encrypted_content)
+        decrypted_content = decrypt_file(encrypted_content, iv)
 
     return Response(
         content=decrypted_content,
@@ -299,8 +317,14 @@ def access_shared_file(token: str, password: str):
         "Access-Control-Expose-Headers": "X-IV, X-Salt, Content-Disposition",
     }
 
-    return FileResponse(
-        file_path, headers=headers, media_type="application/octet-stream"
+    with open(file_path, "rb") as f:
+        encrypted_content = f.read()
+        decrypted_content = decrypt_file(encrypted_content, iv)
+
+    return Response(
+        content=decrypted_content,
+        headers=headers,
+        media_type="application/octet-stream",
     )
 
 

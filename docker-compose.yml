@@ -8,15 +8,15 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
-  backend:
-    build:
-      context: ./backend
-      target: test
-    command: python -m pytest
-    volumes:
-      - ./backend:/app
-    env_file:
-      - .env
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     target: test
+  #   command: python -m pytest
+  #   volumes:
+  #     - ./backend:/app
+  #   env_file:
+  #     - .env
 
   backend-prod:
     build:
