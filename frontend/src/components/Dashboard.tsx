@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { useState } from "react";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Info } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
+import { Alert, AlertDescription } from "./ui/alert";
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
@@ -95,19 +96,28 @@ export const Dashboard = () => {
             </div>
           </div>
         </Card>
+
+        <Alert className="mt-4 bg-yellow-50 border-yellow-200">
+          <Info className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800 mt-2">
+            SecureShare uses end-to-end encryption with AES-GCM to protect your
+            files. All data is encrypted at rest in our database for maximum
+            security.
+          </AlertDescription>
+        </Alert>
       </div>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Files</h2>
-            {user?.role !== 'guest' && (
+            {user?.role !== "guest" && (
               <Button onClick={() => setIsUploadModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Upload File
               </Button>
             )}
           </div>
           <FileList />
-          {user?.role !== 'guest' && (
+          {user?.role !== "guest" && (
             <FileUploadModal
               isOpen={isUploadModalOpen}
               onClose={() => setIsUploadModalOpen(false)}
