@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime, timedelta
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
 from app.models import FileShare

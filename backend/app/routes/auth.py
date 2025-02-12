@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
 from app.services.database import execute_query, fetch_one, fetch_all
 from app.services.security import SecurityService, check_roles
-from app.models import UserCreate, UserLogin, MFAVerify, UserRoleUpdate
+from app.models import UserCreate, UserLogin, MFAVerify
 import os
 from datetime import datetime, timedelta
 
@@ -163,7 +162,6 @@ async def list_users(current_user: dict = Depends(SecurityService.get_current_us
 async def update_user_role(
     user_id: int,
     new_role: str,
-    current_user: dict = Depends(SecurityService.get_current_user),
 ):
     if new_role not in ["admin", "user", "guest"]:
         raise HTTPException(status_code=400, detail="Invalid role")
@@ -174,9 +172,7 @@ async def update_user_role(
 
 @router.delete("/users/{user_id}")
 @check_roles(["admin"])
-async def delete_user(
-    user_id: int, current_user: dict = Depends(SecurityService.get_current_user)
-):
+async def delete_user(user_id: int):
     user = fetch_one("SELECT id FROM users WHERE id = ?", (user_id,))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

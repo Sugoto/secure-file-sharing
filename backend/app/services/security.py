@@ -1,6 +1,5 @@
 import os
 import uuid
-import base64
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import jwt, JWTError
